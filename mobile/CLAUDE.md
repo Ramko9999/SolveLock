@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the react native mobile application for SolveLock built with Expo 55 and TypeScript.
+This is the react native mobile application for SolveLock built with Expo 57 and TypeScript.
 iOS only — the blocking layer is Apple's Screen Time API and has no Android equivalent here.
 
 See @../docs/identity.md for what we're building and the platform constraints it
