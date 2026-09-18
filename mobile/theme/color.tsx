@@ -15,6 +15,8 @@ export enum AppColor {
   muted = "muted",
   correct = "correct",
   wrong = "wrong",
+  edge = "edge",
+  onFilled = "onFilled",
 }
 
 const LIGHT_COLORS: Record<AppColor, string> = {
@@ -27,6 +29,8 @@ const LIGHT_COLORS: Record<AppColor, string> = {
   [AppColor.muted]: "#8E8E93",
   [AppColor.correct]: "#2E9E5B",
   [AppColor.wrong]: "#D9453D",
+  [AppColor.edge]: "#DCDCDE",
+  [AppColor.onFilled]: "#FFFFFF",
 };
 
 const DARK_COLORS: Record<AppColor, string> = {
@@ -39,6 +43,8 @@ const DARK_COLORS: Record<AppColor, string> = {
   [AppColor.muted]: "#8E8E93",
   [AppColor.correct]: "#4CC47C",
   [AppColor.wrong]: "#FF6B64",
+  [AppColor.edge]: "#0A0A0A",
+  [AppColor.onFilled]: "#FFFFFF",
 };
 
 export function getColor(color: AppColor, theme: ColorSchemeName) {

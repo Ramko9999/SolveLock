@@ -46,6 +46,7 @@ type TextColorProps = {
   muted?: boolean;
   correct?: boolean;
   wrong?: boolean;
+  onFilled?: boolean;
 };
 
 type TextItalicProps = {
@@ -117,6 +118,7 @@ function getFontColor({
   muted,
   correct,
   wrong,
+  onFilled,
 }: TextColorProps) {
   if (background) return AppColor.background;
   if (primary) return AppColor.primary;
@@ -126,6 +128,7 @@ function getFontColor({
   if (muted) return AppColor.muted;
   if (correct) return AppColor.correct;
   if (wrong) return AppColor.wrong;
+  if (onFilled) return AppColor.onFilled;
 
   return AppColor.primary;
 }
