@@ -1,10 +1,45 @@
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
+import { useQuotaStore } from "@/store/quota";
 import { describeSelection, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
 import { StyleUtils } from "@/theme/style-utils";
+
+const actionButtonStyles = StyleSheet.create({
+  container: {
+    ...StyleUtils.flexRowCenterAll(),
+    width: "100%",
+    paddingVertical: "5%",
+    borderRadius: Radius.xxl,
+  },
+});
+
+type ActionButtonProps = {
+  label: string;
+  filled: boolean;
+  onPress: () => void;
+};
+
+function ActionButton({ label, filled, onPress }: ActionButtonProps) {
+  const accent = useColor(AppColor.accent);
+  const fill = useColor(AppColor.fill);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        actionButtonStyles.container,
+        { backgroundColor: filled ? accent : fill },
+      ]}
+    >
+      <Text large extrabold onFilled={filled}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 const homeStyles = StyleSheet.create({
   container: {
@@ -21,22 +56,28 @@ const homeStyles = StyleSheet.create({
     width: "100%",
     paddingTop: "10%",
   },
-  button: {
-    ...StyleUtils.flexRowCenterAll(),
+  testing: {
+    ...StyleUtils.flexColumn(8),
     width: "100%",
-    paddingVertical: "5%",
-    borderRadius: Radius.xxl,
+    paddingTop: "12%",
   },
 });
 
 export default function HomeScreen() {
   const router = useRouter();
   const background = useColor(AppColor.background);
-  const accent = useColor(AppColor.accent);
-  const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
+  const status = useQuotaStore((s) => s.status);
+  const startQuota = useQuotaStore((s) => s.startQuota);
+  const stopQuota = useQuotaStore((s) => s.stopQuota);
+  const tripForTesting = useQuotaStore((s) => s.tripForTesting);
+
+  if (status === "reached") {
+    return <Redirect href="/blocked" />;
+  }
 
   const isSetUp = (selection?.categoryCount ?? 0) > 0;
+  const isRunning = status === "running";
 
   return (
     <View style={[homeStyles.container, { backgroundColor: background }]}>
@@ -45,7 +86,7 @@ export default function HomeScreen() {
       </Text>
       <View style={homeStyles.status}>
         <Text small muted>
-          {isSetUp ? "Gating" : "Not set up yet"}
+          {!isSetUp ? "Not set up yet" : isRunning ? "Quota running" : "Gating"}
         </Text>
         {isSetUp ? (
           <Text sneutral semibold>
@@ -55,29 +96,27 @@ export default function HomeScreen() {
       </View>
 
       <View style={homeStyles.actions}>
-        <Pressable
+        <ActionButton
+          label={isSetUp ? "Change setup" : "Set up"}
+          filled={!isSetUp}
           onPress={() => router.push("/setup")}
-          style={[
-            homeStyles.button,
-            { backgroundColor: isSetUp ? fill : accent },
-          ]}
-        >
-          <Text large extrabold onFilled={!isSetUp}>
-            {isSetUp ? "Change setup" : "Set up"}
-          </Text>
-        </Pressable>
+        />
+      </View>
 
-        <Pressable
-          onPress={() => router.push("/solve")}
-          style={[
-            homeStyles.button,
-            { backgroundColor: isSetUp ? accent : fill },
-          ]}
-        >
-          <Text large extrabold onFilled={isSetUp} muted={!isSetUp}>
-            Solve
-          </Text>
-        </Pressable>
+      <View style={homeStyles.testing}>
+        <Text tiny bold muted>
+          TESTING ONLY
+        </Text>
+        <ActionButton
+          label={isRunning ? "Stop quota" : "Start quota"}
+          filled={false}
+          onPress={() => (isRunning ? stopQuota() : startQuota())}
+        />
+        <ActionButton
+          label="Trip the quota now"
+          filled={false}
+          onPress={tripForTesting}
+        />
       </View>
     </View>
   );

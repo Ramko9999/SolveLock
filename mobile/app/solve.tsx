@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuotaStore } from "@/store/quota";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
@@ -224,6 +225,7 @@ export default function SolveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const background = useColor(AppColor.background);
+  const releaseQuota = useQuotaStore((s) => s.releaseQuota);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -255,7 +257,8 @@ export default function SolveScreen() {
       advance.current = setTimeout(
         () => {
           if (index + 1 >= PROBLEMS.length) {
-            router.back();
+            releaseQuota();
+            router.replace("/");
             return;
           }
           setIndex((current) => current + 1);
@@ -264,7 +267,7 @@ export default function SolveScreen() {
         isRight ? REVEAL_MS.correct : REVEAL_MS.wrong,
       );
     },
-    [selected, problem.answer, index, router],
+    [selected, problem.answer, index, router, releaseQuota],
   );
 
   return (
