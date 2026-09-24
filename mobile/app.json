@@ -49,8 +49,77 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "CHANGEME_AFTER_EAS_INIT"
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "bundleIdentifier": "com.ramko9999.solvelock.ShieldConfiguration",
+                  "targetName": "ShieldConfiguration",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.ramko9999.solvelock"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.ramko9999.solvelock.ShieldAction",
+                  "targetName": "ShieldAction",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.ramko9999.solvelock"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.ramko9999.solvelock.ActivityMonitorExtension",
+                  "targetName": "ActivityMonitorExtension",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.ramko9999.solvelock"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.ramko9999.solvelock.ShieldConfiguration",
+                  "targetName": "ShieldConfiguration",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.ramko9999.solvelock"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.ramko9999.solvelock.ShieldAction",
+                  "targetName": "ShieldAction",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.ramko9999.solvelock"
+                    ]
+                  }
+                },
+                {
+                  "bundleIdentifier": "com.ramko9999.solvelock.ActivityMonitorExtension",
+                  "targetName": "ActivityMonitorExtension",
+                  "entitlements": {
+                    "com.apple.developer.family-controls": true,
+                    "com.apple.security.application-groups": [
+                      "group.com.ramko9999.solvelock"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "projectId": "bd6b881b-3cb7-452a-b109-368733dff00b"
       }
-    }
+    },
+    "owner": "ramko9999"
   }
 }
