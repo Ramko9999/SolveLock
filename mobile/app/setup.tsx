@@ -1,6 +1,9 @@
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { AuthorizationState } from "@/enforcement";
+import { enforcement } from "@/enforcement";
 import { describeSelection, QUOTA_MINUTES, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
@@ -89,8 +92,25 @@ export default function SetupScreen() {
   const accent = useColor(AppColor.accent);
   const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
+  const [authorization, setAuthorization] = useState<AuthorizationState>(
+    enforcement.getAuthorization(),
+  );
 
-  const ready = (selection?.categoryCount ?? 0) > 0;
+  const approved = authorization === "approved";
+  const picked =
+    (selection?.categoryCount ?? 0) + (selection?.applicationCount ?? 0) > 0;
+  const ready = approved && picked;
+
+  const authorize = async () => {
+    setAuthorization(await enforcement.requestAuthorization());
+  };
+
+  const authorizationValue =
+    authorization === "approved"
+      ? "Allowed"
+      : authorization === "denied"
+        ? "Denied — allow it in Settings"
+        : "Tap to allow";
 
   return (
     <View
@@ -111,9 +131,14 @@ export default function SetupScreen() {
         </View>
 
         <SettingRow
+          label="Screen Time access"
+          value={authorizationValue}
+          onPress={approved ? undefined : authorize}
+        />
+        <SettingRow
           label="Gated apps"
           value={describeSelection(selection)}
-          onPress={() => router.push("/picker")}
+          onPress={approved ? () => router.push("/picker") : undefined}
         />
         <SettingRow label="Check every" value={`${QUOTA_MINUTES} minutes`} />
         <SettingRow label="Problems per check" value="3" />

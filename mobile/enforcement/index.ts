@@ -1,7 +1,11 @@
+import { isAvailable } from "react-native-device-activity";
 import { createFakeEnforcement } from "./fake";
+import { createNativeEnforcement } from "./native";
 import type { Enforcement } from "./types";
 
-/** Swap for the native implementation at M5, once the entitlement lands. */
-export const enforcement: Enforcement = createFakeEnforcement();
+/** Native in a development build, fake in Expo Go, same JS bundle. */
+export const enforcement: Enforcement = isAvailable()
+  ? createNativeEnforcement()
+  : createFakeEnforcement();
 
-export type { Enforcement, QuotaStatus } from "./types";
+export type { AuthorizationState, Enforcement, QuotaStatus } from "./types";

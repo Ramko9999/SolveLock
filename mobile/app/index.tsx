@@ -1,5 +1,6 @@
 import { Redirect, useRouter } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
+import { enforcement } from "@/enforcement";
 import { useQuotaStore } from "@/store/quota";
 import { describeSelection, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
@@ -67,6 +68,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const background = useColor(AppColor.background);
   const selection = useSetupStore((s) => s.selection);
+  const token = useSetupStore((s) => s.selection?.token ?? null);
   const status = useQuotaStore((s) => s.status);
   const startQuota = useQuotaStore((s) => s.startQuota);
   const stopQuota = useQuotaStore((s) => s.stopQuota);
@@ -103,21 +105,23 @@ export default function HomeScreen() {
         />
       </View>
 
-      <View style={homeStyles.testing}>
-        <Text tiny bold muted>
-          TESTING ONLY
-        </Text>
-        <ActionButton
-          label={isRunning ? "Stop quota" : "Start quota"}
-          filled={false}
-          onPress={() => (isRunning ? stopQuota() : startQuota())}
-        />
-        <ActionButton
-          label="Trip the quota now"
-          filled={false}
-          onPress={tripForTesting}
-        />
-      </View>
+      {enforcement.kind === "fake" ? (
+        <View style={homeStyles.testing}>
+          <Text tiny bold muted>
+            NO SCREEN TIME HERE
+          </Text>
+          <ActionButton
+            label={isRunning ? "Stop quota" : "Start quota"}
+            filled={false}
+            onPress={() => (isRunning ? stopQuota() : startQuota(token))}
+          />
+          <ActionButton
+            label="Trip the quota now"
+            filled={false}
+            onPress={tripForTesting}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }

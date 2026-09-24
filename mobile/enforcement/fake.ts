@@ -1,7 +1,10 @@
-import type { Enforcement } from "./types";
+import type { AuthorizationState, Enforcement } from "./types";
 
+/** Stands in for Screen Time where the native module is absent, so the app
+ *  still runs in Expo Go. It enforces nothing. */
 export function createFakeEnforcement(): Enforcement {
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let authorization: AuthorizationState = "notDetermined";
   const listeners = new Set<() => void>();
 
   const clear = () => {
@@ -25,6 +28,11 @@ export function createFakeEnforcement(): Enforcement {
 
   return {
     kind: "fake",
+    getAuthorization: () => authorization,
+    requestAuthorization: async () => {
+      authorization = "approved";
+      return authorization;
+    },
     async start(minutes) {
       arm(minutes);
     },

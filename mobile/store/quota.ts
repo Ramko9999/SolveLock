@@ -5,8 +5,8 @@ import { QUOTA_MINUTES } from "@/store/setup";
 
 type QuotaState = {
   status: QuotaStatus;
-  startQuota: () => Promise<void>;
-  releaseQuota: () => Promise<void>;
+  startQuota: (token: string | null) => Promise<void>;
+  releaseQuota: (token: string | null) => Promise<void>;
   stopQuota: () => Promise<void>;
   markReached: () => void;
   tripForTesting: () => void;
@@ -14,12 +14,12 @@ type QuotaState = {
 
 export const useQuotaStore = create<QuotaState>()((set) => ({
   status: "idle",
-  startQuota: async () => {
-    await enforcement.start(QUOTA_MINUTES);
+  startQuota: async (token) => {
+    await enforcement.start(QUOTA_MINUTES, token);
     set({ status: "running" });
   },
-  releaseQuota: async () => {
-    await enforcement.release(QUOTA_MINUTES);
+  releaseQuota: async (token) => {
+    await enforcement.release(QUOTA_MINUTES, token);
     set({ status: "running" });
   },
   stopQuota: async () => {
