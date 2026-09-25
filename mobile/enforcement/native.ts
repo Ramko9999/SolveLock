@@ -60,20 +60,23 @@ const SHIELD: ShieldConfiguration = {
 };
 
 /**
- * Apple offers no public way to open our app from a shield.
+ * Apple offers no public way to open our app from a shield, so the library
+ * works around it. Two paths run here, and the extension executes both --
+ * `actions` and the legacy `type` are separate `if` blocks in the Swift.
  *
- * `openApp` is the library's unofficial attempt. Verified on device 2026-09-25:
- * it does nothing. Kept because it costs nothing and may work on a future iOS.
+ * `type: "openUrl"` reads our `url`. The newer `{ type: "openApp" }` action
+ * does NOT: it hardcodes `device-activity://`, which is why it did nothing on
+ * device. Neither `openUrl` nor `url` appears in the library's TypeScript
+ * types even though the Swift handles both, hence the cast.
  *
- * `sendNotification` is the path that actually works. The child taps the
- * notification and that opens the app. It needs notification permission --
- * the library posts the notification but never requests it.
+ * The notification is the fallback, and needs permission we request in setup.
  */
-const SHIELD_ACTIONS: ShieldActions = {
+const SHIELD_ACTIONS = {
   primary: {
     behavior: "close",
+    type: "openUrl",
+    url: "solvelock://",
     actions: [
-      { type: "openApp" },
       {
         type: "sendNotification",
         payload: {
@@ -84,7 +87,7 @@ const SHIELD_ACTIONS: ShieldActions = {
       },
     ],
   },
-};
+} as unknown as ShieldActions;
 
 const BLOCK_ON_THRESHOLD: Action[] = [
   { type: "blockSelection", familyActivitySelectionId: SELECTION_ID },

@@ -49,16 +49,18 @@ product, so decide against them rather than around them.
    `ShieldActionResponse` is only `none` / `close` / `defer`; there is no public
    "open the parent app".
 
-   `react-native-device-activity` works around this with an `openApp` action
-   that calls `NSExtensionContext().open(...)`. Tested on device 2026-09-25: it
-   did nothing — because **the library hardcodes `device-activity://`** (its
-   own TODO admits this), and our scheme was `solvelock`. We now register
-   `device-activity` as a second scheme so that URL points at us. Whether the
-   detached-context trick itself works is still unverified.
+   `react-native-device-activity` works around it with
+   `NSExtensionContext().open(...)`. The newer `{ type: "openApp" }` action
+   **hardcodes `device-activity://`** — its own TODO admits this — which is why
+   it did nothing on device 2026-09-25. The older `type: "openUrl"` path reads a
+   `url` we supply, so we pass `solvelock://`. Neither appears in the library's
+   TypeScript types even though the Swift handles both.
 
-   Assume the fallback regardless: a local notification the child taps. It
+   Whether `open()` works at all on a detached `NSExtensionContext` is still
+   unverified, so keep the fallback: a local notification the child taps. It
    needs notification permission, which the library posts without ever
-   requesting — so we request it during setup.
+   requesting — we request it during setup.
+
 2. **Unlock windows have a 15-minute floor.** `DeviceActivitySchedule` intervals
    can't be shorter, so "solve 3, get back in" can't hand back less than 15
    minutes of access.

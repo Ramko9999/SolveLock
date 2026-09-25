@@ -154,6 +154,19 @@ function Section({ title, children }: SectionProps) {
 }
 
 const settingsStyles = StyleSheet.create({
+  header: {
+    ...StyleUtils.flexRow(),
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: "6%",
+    paddingTop: "2%",
+    paddingBottom: "1%",
+  },
+  back: {
+    ...StyleUtils.flexRowCenterAll(4),
+    paddingVertical: "2%",
+    paddingRight: "6%",
+  },
   container: {
     flex: 1,
   },
@@ -199,6 +212,16 @@ export default function SettingsScreen() {
         { backgroundColor: background, paddingTop: insets.top },
       ]}
     >
+      <View style={settingsStyles.header}>
+        <Pressable onPress={() => router.back()} style={settingsStyles.back}>
+          <Text larger bold accent>
+            {"‹"}
+          </Text>
+          <Text neutral semibold accent>
+            Back
+          </Text>
+        </Pressable>
+      </View>
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <Section title="Quota">
           <View style={settingsStyles.row}>
