@@ -59,10 +59,31 @@ const SHIELD: ShieldConfiguration = {
   primaryButtonLabelColor: toUIColor(getColor(AppColor.onFilled, "light")),
 };
 
-/** Apple offers no public way to open our app from a shield. `openApp` is the
- *  library's unofficial one; if it fails on device, add sendNotification here. */
+/**
+ * Apple offers no public way to open our app from a shield.
+ *
+ * `openApp` is the library's unofficial attempt. Verified on device 2026-09-25:
+ * it does nothing. Kept because it costs nothing and may work on a future iOS.
+ *
+ * `sendNotification` is the path that actually works. The child taps the
+ * notification and that opens the app. It needs notification permission --
+ * the library posts the notification but never requests it.
+ */
 const SHIELD_ACTIONS: ShieldActions = {
-  primary: { behavior: "close", actions: [{ type: "openApp" }] },
+  primary: {
+    behavior: "close",
+    actions: [
+      { type: "openApp" },
+      {
+        type: "sendNotification",
+        payload: {
+          title: "Three problems",
+          body: "Tap to solve and get back in.",
+          interruptionLevel: "active",
+        },
+      },
+    ],
+  },
 };
 
 const BLOCK_ON_THRESHOLD: Action[] = [

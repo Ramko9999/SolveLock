@@ -1,9 +1,11 @@
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AuthorizationState } from "@/enforcement";
 import { enforcement } from "@/enforcement";
+import { useQuotaStore } from "@/store/quota";
 import { describeSelection, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
@@ -93,6 +95,9 @@ export default function SetupScreen() {
   const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
+  const setArmedAt = useSetupStore((s) => s.setArmedAt);
+  const startQuota = useQuotaStore((s) => s.startQuota);
+  const [notifications, setNotifications] = useState(false);
   const [authorization, setAuthorization] = useState<AuthorizationState>(
     enforcement.getAuthorization(),
   );
@@ -104,6 +109,19 @@ export default function SetupScreen() {
 
   const authorize = async () => {
     setAuthorization(await enforcement.requestAuthorization());
+  };
+
+  // The shield cannot open our app. A notification is the only way through,
+  // and the library posts one without ever asking for permission.
+  const allowNotifications = async () => {
+    const { granted } = await Notifications.requestPermissionsAsync();
+    setNotifications(granted);
+  };
+
+  const finish = () => {
+    setArmedAt(Date.now());
+    startQuota(quotaMinutes, selection?.token ?? null);
+    router.back();
   };
 
   const authorizationValue =
@@ -137,6 +155,11 @@ export default function SetupScreen() {
           onPress={approved ? undefined : authorize}
         />
         <SettingRow
+          label="Notifications"
+          value={notifications ? "Allowed" : "Tap to allow"}
+          onPress={notifications ? undefined : allowNotifications}
+        />
+        <SettingRow
           label="Gated apps"
           value={describeSelection(selection)}
           onPress={approved ? () => router.push("/picker") : undefined}
@@ -147,7 +170,7 @@ export default function SetupScreen() {
         <View style={setupStyles.spacer} />
 
         <Pressable
-          onPress={() => router.back()}
+          onPress={finish}
           disabled={!ready}
           style={[setupStyles.done, { backgroundColor: ready ? accent : fill }]}
         >
