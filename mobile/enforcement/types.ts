@@ -31,6 +31,10 @@ export type Enforcement = {
   stop(): Promise<void>;
   /** Escape hatch: unblock everything without solving. */
   clearShield(): Promise<void>;
+  /** True while iOS is showing the shield. Ask the system, don't remember. */
+  isShielded(): boolean;
+  /** When the threshold last fired, from the monitor's own record. */
+  lastReachedAt(): number | null;
   diagnostics(): Diagnostics;
   onReached(listener: () => void): () => void;
   /** Only the fake provides this. */

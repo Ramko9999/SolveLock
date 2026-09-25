@@ -22,9 +22,13 @@ export const QUOTA_CHOICES = [1, 2, 5, 30] as const;
 type SetupState = {
   selection: Selection | null;
   quotaMinutes: number;
+  /** When we last called startMonitoring. Wall-clock, not usage -- iOS never
+   *  reports a running total, so this is elapsed time, not quota consumed. */
+  armedAt: number | null;
   hydrated: boolean;
   setSelection: (selection: Selection) => void;
   setQuotaMinutes: (minutes: number) => void;
+  setArmedAt: (armedAt: number | null) => void;
   clearSelection: () => void;
   setHydrated: () => void;
 };
@@ -34,9 +38,11 @@ export const useSetupStore = create<SetupState>()(
     (set) => ({
       selection: null,
       quotaMinutes: DEFAULT_QUOTA_MINUTES,
+      armedAt: null,
       hydrated: false,
       setSelection: (selection) => set({ selection }),
       setQuotaMinutes: (quotaMinutes) => set({ quotaMinutes }),
+      setArmedAt: (armedAt) => set({ armedAt }),
       clearSelection: () => set({ selection: null }),
       setHydrated: () => set({ hydrated: true }),
     }),
@@ -46,6 +52,7 @@ export const useSetupStore = create<SetupState>()(
       partialize: (state) => ({
         selection: state.selection,
         quotaMinutes: state.quotaMinutes,
+        armedAt: state.armedAt,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();

@@ -8,6 +8,9 @@ type QuotaState = {
   releaseQuota: (minutes: number, token: string | null) => Promise<void>;
   stopQuota: () => Promise<void>;
   clearShield: () => Promise<void>;
+  /** iOS holds the truth across app launches, so read it rather than
+   *  remember it. This store is deliberately not persisted. */
+  syncFromSystem: (armedAt: number | null) => void;
   markReached: () => void;
   tripForTesting: () => void;
 };
@@ -29,6 +32,18 @@ export const useQuotaStore = create<QuotaState>()((set) => ({
   clearShield: async () => {
     await enforcement.clearShield();
     set({ status: "idle" });
+  },
+  syncFromSystem: (armedAt) => {
+    if (enforcement.isShielded()) {
+      set({ status: "reached" });
+      return;
+    }
+    const reachedAt = enforcement.lastReachedAt();
+    if (armedAt !== null && reachedAt !== null && reachedAt >= armedAt) {
+      set({ status: "reached" });
+      return;
+    }
+    set({ status: armedAt === null ? "idle" : "running" });
   },
   markReached: () => set({ status: "reached" }),
   tripForTesting: () => enforcement.trip?.(),

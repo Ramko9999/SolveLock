@@ -5,6 +5,7 @@ import type { AuthorizationState, Enforcement } from "./types";
 export function createFakeEnforcement(): Enforcement {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let authorization: AuthorizationState = "notDetermined";
+  let reached: number | null = null;
   const listeners = new Set<() => void>();
 
   const clear = () => {
@@ -16,6 +17,7 @@ export function createFakeEnforcement(): Enforcement {
 
   const fire = () => {
     timer = null;
+    reached = Date.now();
     for (const listener of listeners) {
       listener();
     }
@@ -23,6 +25,7 @@ export function createFakeEnforcement(): Enforcement {
 
   const arm = (minutes: number) => {
     clear();
+    reached = null;
     timer = setTimeout(fire, minutes * 60_000);
   };
 
@@ -31,7 +34,10 @@ export function createFakeEnforcement(): Enforcement {
     setSelection: () => {},
     clearShield: async () => {
       clear();
+      reached = null;
     },
+    isShielded: () => reached !== null,
+    lastReachedAt: () => reached,
     diagnostics: () => ({
       authorization,
       activities: [],

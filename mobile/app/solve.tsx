@@ -229,6 +229,7 @@ export default function SolveScreen() {
   const releaseQuota = useQuotaStore((s) => s.releaseQuota);
   const token = useSetupStore((s) => s.selection?.token ?? null);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
+  const setArmedAt = useSetupStore((s) => s.setArmedAt);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -260,6 +261,7 @@ export default function SolveScreen() {
       advance.current = setTimeout(
         () => {
           if (index + 1 >= PROBLEMS.length) {
+            setArmedAt(Date.now());
             releaseQuota(quotaMinutes, token);
             router.replace("/");
             return;
@@ -278,6 +280,7 @@ export default function SolveScreen() {
       releaseQuota,
       token,
       quotaMinutes,
+      setArmedAt,
     ],
   );
 

@@ -6,6 +6,7 @@ import {
   type DeviceActivitySchedule,
   getActivities,
   getAuthorizationStatus,
+  getEvents,
   isShieldActive,
   onDeviceActivityMonitorEvent,
   requestAuthorization,
@@ -130,6 +131,18 @@ export function createNativeEnforcement(): Enforcement {
     },
     clearShield: async () => {
       resetBlocks("manual");
+    },
+    isShielded: () => isShieldActive(),
+    lastReachedAt: () => {
+      const hits = getEvents(ACTIVITY_NAME).filter(
+        (event) => event.callbackName === "eventDidReachThreshold",
+      );
+      if (hits.length === 0) {
+        return null;
+      }
+      return Math.max(
+        ...hits.map((hit) => new Date(hit.lastCalledAt).getTime()),
+      );
     },
     diagnostics: () => ({
       authorization: toState(getAuthorizationStatus()),

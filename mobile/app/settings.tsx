@@ -125,6 +125,7 @@ export default function SettingsScreen() {
   const fill = useColor(AppColor.fill);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setQuotaMinutes = useSetupStore((s) => s.setQuotaMinutes);
+  const setArmedAt = useSetupStore((s) => s.setArmedAt);
   const token = useSetupStore((s) => s.selection?.token ?? null);
   const status = useQuotaStore((s) => s.status);
   const startQuota = useQuotaStore((s) => s.startQuota);
@@ -157,10 +158,25 @@ export default function SettingsScreen() {
         <Section title={`Monitoring · ${status}`}>
           <Action
             label="Arm the quota"
-            onPress={() => startQuota(quotaMinutes, token)}
+            onPress={() => {
+              setArmedAt(Date.now());
+              startQuota(quotaMinutes, token);
+            }}
           />
-          <Action label="Stop monitoring" onPress={stopQuota} />
-          <Action label="Clear the shield" onPress={clearShield} />
+          <Action
+            label="Stop monitoring"
+            onPress={() => {
+              setArmedAt(null);
+              stopQuota();
+            }}
+          />
+          <Action
+            label="Clear the shield"
+            onPress={() => {
+              setArmedAt(null);
+              clearShield();
+            }}
+          />
           {enforcement.kind === "fake" ? (
             <Action label="Trip the quota now" onPress={tripForTesting} />
           ) : null}

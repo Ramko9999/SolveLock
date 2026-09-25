@@ -1,4 +1,5 @@
 import { Redirect, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet } from "react-native";
 import { useQuotaStore } from "@/store/quota";
 import { describeSelection, useSetupStore } from "@/store/setup";
@@ -6,6 +7,29 @@ import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
 import { StyleUtils } from "@/theme/style-utils";
+
+/** Wall-clock since arming. NOT quota consumed -- iOS never reports a running
+ *  total, so a phone in a pocket accrues elapsed time but no usage. */
+function useElapsed(since: number | null) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (since === null) {
+      return;
+    }
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [since]);
+
+  if (since === null) {
+    return null;
+  }
+  const seconds = Math.max(0, Math.floor((now - since) / 1000));
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+  return `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, "0")}s`;
+}
 
 const actionButtonStyles = StyleSheet.create({
   container: {
@@ -63,6 +87,8 @@ export default function HomeScreen() {
   const background = useColor(AppColor.background);
   const selection = useSetupStore((s) => s.selection);
   const status = useQuotaStore((s) => s.status);
+  const armedAt = useSetupStore((s) => s.armedAt);
+  const elapsed = useElapsed(status === "running" ? armedAt : null);
 
   if (status === "reached") {
     return <Redirect href="/blocked" />;
@@ -86,6 +112,11 @@ export default function HomeScreen() {
         {isSetUp ? (
           <Text sneutral semibold>
             {describeSelection(selection)}
+          </Text>
+        ) : null}
+        {elapsed ? (
+          <Text small muted mono>
+            armed {elapsed} ago
           </Text>
         ) : null}
       </View>
