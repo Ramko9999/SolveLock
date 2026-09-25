@@ -1,6 +1,5 @@
 import { Redirect, useRouter } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
-import { enforcement } from "@/enforcement";
 import { useQuotaStore } from "@/store/quota";
 import { describeSelection, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
@@ -57,29 +56,19 @@ const homeStyles = StyleSheet.create({
     width: "100%",
     paddingTop: "10%",
   },
-  testing: {
-    ...StyleUtils.flexColumn(8),
-    width: "100%",
-    paddingTop: "12%",
-  },
 });
 
 export default function HomeScreen() {
   const router = useRouter();
   const background = useColor(AppColor.background);
   const selection = useSetupStore((s) => s.selection);
-  const token = useSetupStore((s) => s.selection?.token ?? null);
   const status = useQuotaStore((s) => s.status);
-  const startQuota = useQuotaStore((s) => s.startQuota);
-  const stopQuota = useQuotaStore((s) => s.stopQuota);
-  const tripForTesting = useQuotaStore((s) => s.tripForTesting);
 
   if (status === "reached") {
     return <Redirect href="/blocked" />;
   }
 
   const isSetUp = (selection?.categoryCount ?? 0) > 0;
-  const isRunning = status === "running";
 
   return (
     <View style={[homeStyles.container, { backgroundColor: background }]}>
@@ -88,7 +77,11 @@ export default function HomeScreen() {
       </Text>
       <View style={homeStyles.status}>
         <Text small muted>
-          {!isSetUp ? "Not set up yet" : isRunning ? "Quota running" : "Gating"}
+          {!isSetUp
+            ? "Not set up yet"
+            : status === "running"
+              ? "Watching"
+              : "Gating"}
         </Text>
         {isSetUp ? (
           <Text sneutral semibold>
@@ -103,25 +96,12 @@ export default function HomeScreen() {
           filled={!isSetUp}
           onPress={() => router.push("/setup")}
         />
+        <ActionButton
+          label="Settings"
+          filled={false}
+          onPress={() => router.push("/settings")}
+        />
       </View>
-
-      {enforcement.kind === "fake" ? (
-        <View style={homeStyles.testing}>
-          <Text tiny bold muted>
-            NO SCREEN TIME HERE
-          </Text>
-          <ActionButton
-            label={isRunning ? "Stop quota" : "Start quota"}
-            filled={false}
-            onPress={() => (isRunning ? stopQuota() : startQuota(token))}
-          />
-          <ActionButton
-            label="Trip the quota now"
-            filled={false}
-            onPress={tripForTesting}
-          />
-        </View>
-      ) : null}
     </View>
   );
 }

@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { QUOTA_MINUTES } from "@/store/setup";
+import { useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
@@ -37,6 +37,7 @@ export default function BlockedScreen() {
   const insets = useSafeAreaInsets();
   const background = useColor(AppColor.background);
   const accent = useColor(AppColor.accent);
+  const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
 
   return (
     <View
@@ -48,7 +49,7 @@ export default function BlockedScreen() {
       <View style={blockedStyles.content}>
         <View style={blockedStyles.heading}>
           <Text huger black>
-            {QUOTA_MINUTES} minutes.
+            {quotaMinutes} minutes.
           </Text>
           <Text larger semibold muted>
             Solve 3 and you're back in.

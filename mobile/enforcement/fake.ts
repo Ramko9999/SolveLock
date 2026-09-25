@@ -28,6 +28,16 @@ export function createFakeEnforcement(): Enforcement {
 
   return {
     kind: "fake",
+    setSelection: () => {},
+    clearShield: async () => {
+      clear();
+    },
+    diagnostics: () => ({
+      authorization,
+      activities: [],
+      shieldActive: false,
+      appGroup: {},
+    }),
     getAuthorization: () => authorization,
     requestAuthorization: async () => {
       authorization = "approved";

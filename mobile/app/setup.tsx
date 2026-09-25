@@ -4,7 +4,7 @@ import { Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AuthorizationState } from "@/enforcement";
 import { enforcement } from "@/enforcement";
-import { describeSelection, QUOTA_MINUTES, useSetupStore } from "@/store/setup";
+import { describeSelection, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
@@ -92,6 +92,7 @@ export default function SetupScreen() {
   const accent = useColor(AppColor.accent);
   const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
+  const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const [authorization, setAuthorization] = useState<AuthorizationState>(
     enforcement.getAuthorization(),
   );
@@ -125,8 +126,8 @@ export default function SetupScreen() {
             Set up SolveLock
           </Text>
           <Text small muted>
-            Pick what to gate. After {QUOTA_MINUTES} minutes, three problems
-            unlock {QUOTA_MINUTES} more.
+            Pick what to gate. After {quotaMinutes} minutes, three problems
+            unlock {quotaMinutes} more.
           </Text>
         </View>
 
@@ -140,7 +141,7 @@ export default function SetupScreen() {
           value={describeSelection(selection)}
           onPress={approved ? () => router.push("/picker") : undefined}
         />
-        <SettingRow label="Check every" value={`${QUOTA_MINUTES} minutes`} />
+        <SettingRow label="Check every" value={`${quotaMinutes} minutes`} />
         <SettingRow label="Problems per check" value="3" />
 
         <View style={setupStyles.spacer} />

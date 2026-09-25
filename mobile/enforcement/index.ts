@@ -8,4 +8,9 @@ export const enforcement: Enforcement = isAvailable()
   ? createNativeEnforcement()
   : createFakeEnforcement();
 
-export type { AuthorizationState, Enforcement, QuotaStatus } from "./types";
+export type {
+  AuthorizationState,
+  Diagnostics,
+  Enforcement,
+  QuotaStatus,
+} from "./types";

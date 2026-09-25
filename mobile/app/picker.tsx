@@ -98,6 +98,7 @@ export default function PickerScreen() {
           familyActivitySelection={saved?.token ?? null}
           onSelectionChange={(event) => {
             const next = event.nativeEvent;
+            enforcement.setSelection(next.familyActivitySelection);
             setSelection({
               categories: [],
               applicationCount: next.applicationCount,
