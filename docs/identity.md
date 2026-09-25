@@ -45,13 +45,20 @@ Parents with kids in elementary and middle school. That's where it hits hardest.
 These come from Apple's Screen Time API and are not negotiable — they shape the
 product, so decide against them rather than around them.
 
-1. **The shield cannot launch the app. Verified 2026-09-25.** Apple's
+1. **The shield cannot launch the app through Apple's API.**
    `ShieldActionResponse` is only `none` / `close` / `defer`; there is no public
-   "open the parent app". `react-native-device-activity` ships an `openApp`
-   action — tested on device, it does nothing. The local notification fallback
-   is the only way through, and it needs notification permission, which the
-   library posts without ever requesting. So the return trip is: shield →
-   notification → tap → app. Design for that, not for a button that opens us.
+   "open the parent app".
+
+   `react-native-device-activity` works around this with an `openApp` action
+   that calls `NSExtensionContext().open(...)`. Tested on device 2026-09-25: it
+   did nothing — because **the library hardcodes `device-activity://`** (its
+   own TODO admits this), and our scheme was `solvelock`. We now register
+   `device-activity` as a second scheme so that URL points at us. Whether the
+   detached-context trick itself works is still unverified.
+
+   Assume the fallback regardless: a local notification the child taps. It
+   needs notification permission, which the library posts without ever
+   requesting — so we request it during setup.
 2. **Unlock windows have a 15-minute floor.** `DeviceActivitySchedule` intervals
    can't be shorter, so "solve 3, get back in" can't hand back less than 15
    minutes of access.

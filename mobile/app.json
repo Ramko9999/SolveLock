@@ -4,7 +4,10 @@
     "slug": "solvelock",
     "version": "0.1.0",
     "orientation": "portrait",
-    "scheme": "solvelock",
+    "scheme": [
+      "solvelock",
+      "device-activity"
+    ],
     "userInterfaceStyle": "automatic",
     "ios": {
       "appleTeamId": "37U34B89DU",
