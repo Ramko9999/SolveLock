@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Diagnostics } from "@/enforcement";
@@ -10,6 +10,29 @@ import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
 import { StyleUtils } from "@/theme/style-utils";
+
+/** Wall-clock since arming. NOT quota consumed -- iOS never reports a running
+ *  total, so a phone left in a pocket accrues elapsed time and no usage. */
+function useElapsed(since: number | null) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (since === null) {
+      return;
+    }
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [since]);
+
+  if (since === null) {
+    return null;
+  }
+  const seconds = Math.max(0, Math.floor((now - since) / 1000));
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+  return `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, "0")}s`;
+}
 
 const choiceStyles = StyleSheet.create({
   container: {
@@ -133,6 +156,8 @@ export default function SettingsScreen() {
   const clearShield = useQuotaStore((s) => s.clearShield);
   const tripForTesting = useQuotaStore((s) => s.tripForTesting);
   const [report, setReport] = useState<Diagnostics | null>(null);
+  const armedAt = useSetupStore((s) => s.armedAt);
+  const elapsed = useElapsed(armedAt);
 
   return (
     <View
@@ -155,7 +180,9 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
-        <Section title={`Monitoring · ${status}`}>
+        <Section
+          title={`Monitoring · ${status}${elapsed ? ` · armed ${elapsed} ago` : ""}`}
+        >
           <Action
             label="Arm the quota"
             onPress={() => {
