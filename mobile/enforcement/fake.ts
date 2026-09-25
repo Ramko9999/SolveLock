@@ -42,6 +42,7 @@ export function createFakeEnforcement(): Enforcement {
       authorization,
       activities: [],
       shieldActive: false,
+      appGroupKeys: [],
       appGroup: {},
     }),
     getAuthorization: () => authorization,

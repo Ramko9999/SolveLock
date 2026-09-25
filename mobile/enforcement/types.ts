@@ -7,7 +7,10 @@ export type Diagnostics = {
   authorization: AuthorizationState;
   activities: string[];
   shieldActive: boolean;
-  appGroup: Record<string, unknown>;
+  /** Empty means the App Group is not reachable, which breaks everything. */
+  appGroupKeys: string[];
+  /** Key -> short description. Long blobs are reported by length, not dumped. */
+  appGroup: Record<string, string>;
 };
 
 /**

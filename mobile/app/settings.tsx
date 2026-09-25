@@ -97,6 +97,38 @@ function Action({ label, onPress }: ActionProps) {
   );
 }
 
+const factStyles = StyleSheet.create({
+  container: {
+    ...StyleUtils.flexRow(8),
+    width: "100%",
+    alignItems: "flex-start",
+  },
+  key: {
+    width: "45%",
+  },
+  value: {
+    flex: 1,
+  },
+});
+
+type FactProps = {
+  label: string;
+  value: string;
+};
+
+function Fact({ label, value }: FactProps) {
+  return (
+    <View style={factStyles.container}>
+      <Text tiny bold muted style={factStyles.key}>
+        {label}
+      </Text>
+      <Text tiny mono style={factStyles.value}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
 const sectionStyles = StyleSheet.create({
   container: {
     ...StyleUtils.flexColumn(8),
@@ -135,6 +167,7 @@ const settingsStyles = StyleSheet.create({
     width: "100%",
   },
   dump: {
+    ...StyleUtils.flexColumn(6),
     width: "100%",
     padding: "4%",
     borderRadius: Radius.lg,
@@ -223,9 +256,36 @@ export default function SettingsScreen() {
           />
           {report ? (
             <View style={[settingsStyles.dump, { backgroundColor: fill }]}>
-              <Text tiny mono>
-                {JSON.stringify(report, null, 2)}
-              </Text>
+              <Fact label="authorization" value={report.authorization} />
+              <Fact
+                label="activities"
+                value={
+                  report.activities.length > 0
+                    ? report.activities.join(", ")
+                    : "NONE - not monitoring"
+                }
+              />
+              <Fact
+                label="shield active"
+                value={report.shieldActive ? "yes" : "no"}
+              />
+              <Fact
+                label="token stored"
+                value={
+                  token ? `yes (${token.length} chars)` : "NO - nothing to gate"
+                }
+              />
+              <Fact
+                label="app group keys"
+                value={
+                  report.appGroupKeys.length > 0
+                    ? String(report.appGroupKeys.length)
+                    : "NONE - app group unreachable"
+                }
+              />
+              {report.appGroupKeys.map((key) => (
+                <Fact key={key} label={key} value={report.appGroup[key]} />
+              ))}
             </View>
           ) : null}
         </Section>

@@ -69,6 +69,24 @@ const BLOCK_ON_THRESHOLD: Action[] = [
   { type: "blockSelection", familyActivitySelectionId: SELECTION_ID },
 ];
 
+/** The dump is unreadable raw: tokens are hundreds of characters and the
+ *  shield config is deeply nested. Summarise instead. */
+function summarise(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+  if (typeof value === "string") {
+    return value.length > 60 ? `string(${value.length})` : value;
+  }
+  if (Array.isArray(value)) {
+    return `array(${value.length})`;
+  }
+  if (typeof value === "object") {
+    return `object{${Object.keys(value as object).join(",")}}`;
+  }
+  return String(value);
+}
+
 function toState(status: AuthorizationStatusType): AuthorizationState {
   if (status === AuthorizationStatus.approved) {
     return "approved";
@@ -144,12 +162,19 @@ export function createNativeEnforcement(): Enforcement {
         ...hits.map((hit) => new Date(hit.lastCalledAt).getTime()),
       );
     },
-    diagnostics: () => ({
-      authorization: toState(getAuthorizationStatus()),
-      activities: getActivities(),
-      shieldActive: isShieldActive(),
-      appGroup: userDefaultsAll(),
-    }),
+    diagnostics: () => {
+      const raw = userDefaultsAll() ?? {};
+      const keys = Object.keys(raw).sort();
+      return {
+        authorization: toState(getAuthorizationStatus()),
+        activities: getActivities(),
+        shieldActive: isShieldActive(),
+        appGroupKeys: keys,
+        appGroup: Object.fromEntries(
+          keys.map((key) => [key, summarise(raw[key])]),
+        ),
+      };
+    },
     onReached: (listener) => {
       const subscription = onDeviceActivityMonitorEvent((event) => {
         if (event.callbackName === "eventDidReachThreshold") {
