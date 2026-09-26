@@ -1,0 +1,7 @@
+{
+  "name": "solvelock-problem-generation-prototype",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway prototype from the Sept 2026 design sessions. Not app code. See docs/research.md.",
+  "dependencies": { "zod": "^4.6.5" }
+}

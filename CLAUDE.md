@@ -17,3 +17,9 @@ Android equivalent in this codebase yet.
 
 - `mobile/` — the Expo app
 - `docs/` — product identity and platform notes
+- `prototypes/` — throwaway spikes, not app code
+
+[docs/research.md](docs/research.md) holds the problem-generation research — schema
+design, diagram rendering options, question banks and licences, and the M0-M7
+evaluation ladder. It is deliberately not `@`-referenced; read it on demand when
+working on problem generation.

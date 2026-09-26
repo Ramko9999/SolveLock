@@ -2,6 +2,7 @@
   "name": "solvelock",
   "main": "expo-router/entry",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "start": "expo start --dev-client",
     "start:go": "expo start --go",
@@ -46,5 +47,11 @@
     "tsx": "^4.21.0",
     "typescript": "~6.0.3"
   },
-  "private": true
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "unrs-resolver"
+    ]
+  }
 }
