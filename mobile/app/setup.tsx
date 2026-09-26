@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AuthorizationState } from "@/enforcement";
 import { enforcement } from "@/enforcement";
@@ -149,6 +149,13 @@ export default function SetupScreen() {
           </Text>
         </View>
 
+        {Platform.OS === "android" ? (
+          <SettingRow
+            label="Permissions"
+            value="Four Android settings screens"
+            onPress={() => router.push("/permissions")}
+          />
+        ) : null}
         <SettingRow
           label="Screen Time access"
           value={authorizationValue}

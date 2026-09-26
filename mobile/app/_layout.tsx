@@ -30,6 +30,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="setup" />
           <Stack.Screen name="settings" />
+          <Stack.Screen name="permissions" />
           <Stack.Screen name="blocked" />
           <Stack.Screen name="solve" />
           <Stack.Screen name="picker" options={{ presentation: "modal" }} />
