@@ -36,6 +36,7 @@ export function createFakeEnforcement(): Enforcement {
       clear();
       reached = null;
     },
+    pointShieldAt: () => {},
     isShielded: () => reached !== null,
     lastReachedAt: () => reached,
     diagnostics: () => ({

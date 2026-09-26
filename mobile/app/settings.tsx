@@ -272,6 +272,17 @@ export default function SettingsScreen() {
           />
         </Section>
 
+        <Section title="Shield open test">
+          <Action
+            label="Point the shield at apple.com"
+            onPress={() => enforcement.pointShieldAt("https://apple.com")}
+          />
+          <Action
+            label="Point the shield back at SolveLock"
+            onPress={() => enforcement.pointShieldAt("solvelock://")}
+          />
+        </Section>
+
         <Section title="Diagnostics">
           <Action
             label="Read the App Group"

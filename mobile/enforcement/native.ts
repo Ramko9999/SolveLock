@@ -79,24 +79,30 @@ const SHIELD: ShieldConfiguration = {
  *
  * The notification stays until this is proven on device.
  */
-const SHIELD_ACTIONS = {
-  primary: {
-    behavior: "close",
-    type: "openUrlWithDispatch",
-    url: "solvelock://",
-    delay: 0.5,
-    actions: [
-      {
-        type: "sendNotification",
-        payload: {
-          title: "Three problems",
-          body: "Tap to solve and get back in.",
-          interruptionLevel: "active",
+const APP_URL = "solvelock://";
+
+function shieldActionsOpening(url: string) {
+  return {
+    primary: {
+      behavior: "close",
+      type: "openUrlWithDispatch",
+      url,
+      delay: 0.5,
+      actions: [
+        {
+          type: "sendNotification",
+          payload: {
+            title: "Three problems",
+            body: "Tap to solve and get back in.",
+            interruptionLevel: "active",
+          },
         },
-      },
-    ],
-  },
-} as unknown as ShieldActions;
+      ],
+    },
+  } as unknown as ShieldActions;
+}
+
+const SHIELD_ACTIONS = shieldActionsOpening(APP_URL);
 
 const BLOCK_ON_THRESHOLD: Action[] = [
   { type: "blockSelection", familyActivitySelectionId: SELECTION_ID },
@@ -182,6 +188,9 @@ export function createNativeEnforcement(): Enforcement {
     },
     clearShield: async () => {
       resetBlocks("manual");
+    },
+    pointShieldAt: (url) => {
+      updateShield(SHIELD, shieldActionsOpening(url), "diagnostic");
     },
     isShielded: () => isShieldActive(),
     lastReachedAt: () => {

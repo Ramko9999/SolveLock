@@ -42,4 +42,8 @@ export type Enforcement = {
   onReached(listener: () => void): () => void;
   /** Only the fake provides this. */
   trip?(): void;
+  /** Rewrite the shield's primary button to open `url`. Diagnostic only:
+   *  point it at https://apple.com to learn whether the open mechanism works
+   *  at all, independently of whether our scheme is handled. */
+  pointShieldAt(url: string): void;
 };
