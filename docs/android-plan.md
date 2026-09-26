@@ -174,6 +174,10 @@ The child answers three problems. The block clears. **We relaunch the game.**
 This is the step iOS cannot do. It removes the seam that
 [kid-experience.md](kid-experience.md) principle 5 complains about.
 
+**Done, 2026-09-26.** Three correct answers, and Chrome opened by itself. The
+child taps nothing after the last answer. The count resets first, so the game
+does not block again the moment it opens.
+
 ### A7 — It survives the day
 
 **Test:** leave the phone alone for an hour. Lock it. Let it sleep. Then open

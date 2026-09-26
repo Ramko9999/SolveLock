@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { gate } from "@/enforcement/gate";
 import { useQuotaStore } from "@/store/quota";
 import { useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
@@ -261,6 +262,18 @@ export default function SolveScreen() {
       advance.current = setTimeout(
         () => {
           if (index + 1 >= PROBLEMS.length) {
+            // Android hands the child straight back to the game. iOS cannot,
+            // so it drops them on our home screen and they find it themselves.
+            if (gate) {
+              const game = gate.getBlockedPackage();
+              gate.resetUsage();
+              gate.clearBlocked();
+              router.replace("/");
+              if (game) {
+                gate.launchApp(game);
+              }
+              return;
+            }
             setArmedAt(Date.now());
             releaseQuota(quotaMinutes, token);
             router.replace("/");
