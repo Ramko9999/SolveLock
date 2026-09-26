@@ -20,15 +20,17 @@ object GateState {
   var changedAt: Long = 0
     private set
 
-  var listener: ((String, Long) -> Unit)? = null
+  var listener: ((String?, Long) -> Unit)? = null
 
-  fun report(packageName: String) {
+  /** True when this is a change, so the caller can act on it once. */
+  fun report(packageName: String?): Boolean {
     if (packageName == foregroundPackage) {
-      return
+      return false
     }
     foregroundPackage = packageName
     changedAt = System.currentTimeMillis()
     listener?.invoke(packageName, changedAt)
+    return true
   }
 
   fun isAccessibilityEnabled(context: Context): Boolean {

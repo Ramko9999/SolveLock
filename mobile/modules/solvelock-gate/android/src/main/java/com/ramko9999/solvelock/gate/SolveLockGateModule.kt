@@ -24,6 +24,29 @@ class SolveLockGateModule : Module() {
       InstalledApps.list(context)
     }
 
+    Function("getUsage") {
+      val context = appContext.reactContext ?: return@Function null
+      UsageCounter.snapshot(context)
+    }
+
+    Function("setGatedPackages") { packages: List<String> ->
+      val context = appContext.reactContext ?: return@Function false
+      UsageCounter.setGated(context, packages)
+      true
+    }
+
+    Function("setQuotaMinutes") { minutes: Double ->
+      val context = appContext.reactContext ?: return@Function false
+      UsageCounter.setQuotaMinutes(context, minutes)
+      true
+    }
+
+    Function("resetUsage") {
+      val context = appContext.reactContext ?: return@Function false
+      UsageCounter.reset(context)
+      true
+    }
+
     Function("isAccessibilityEnabled") {
       val context = appContext.reactContext ?: return@Function false
       GateState.isAccessibilityEnabled(context)

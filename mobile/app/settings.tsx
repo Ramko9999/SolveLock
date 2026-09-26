@@ -4,7 +4,7 @@ import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Diagnostics } from "@/enforcement";
 import { enforcement } from "@/enforcement";
-import { type ForegroundApp, gate } from "@/enforcement/gate";
+import { type ForegroundApp, gate, type Usage } from "@/enforcement/gate";
 import { useQuotaStore } from "@/store/quota";
 import { QUOTA_CHOICES, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
@@ -96,6 +96,20 @@ function Action({ label, onPress }: ActionProps) {
       </Text>
     </Pressable>
   );
+}
+
+function clock(millis: number) {
+  const total = Math.max(0, Math.round(millis / 1000));
+  const minutes = Math.floor(total / 60);
+  return `${minutes}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function describeUsage(usage: Usage) {
+  const of = `${clock(usage.usedMillis)} of ${clock(usage.quotaMillis)}`;
+  if (usage.over) {
+    return `${of} - OVER`;
+  }
+  return usage.inGatedApp ? `${of} - counting` : of;
 }
 
 const factStyles = StyleSheet.create({
@@ -207,6 +221,7 @@ export default function SettingsScreen() {
   const elapsed = useElapsed(armedAt);
   const [watching, setWatching] = useState(false);
   const [seen, setSeen] = useState<ForegroundApp[]>([]);
+  const [usage, setUsage] = useState<Usage | null>(null);
 
   useEffect(() => {
     const native = gate;
@@ -223,6 +238,7 @@ export default function SettingsScreen() {
           ? history
           : [now, ...history].slice(0, 5),
       );
+      setUsage(native.getUsage());
     }, 250);
     return () => clearInterval(timer);
   }, [watching]);
@@ -324,9 +340,20 @@ export default function SettingsScreen() {
                 />
               ))
             )}
+            <Fact
+              label="used"
+              value={usage ? describeUsage(usage) : "start watching to see it"}
+            />
             <Action
               label={watching ? "Stop watching" : "Start watching"}
               onPress={() => setWatching((on) => !on)}
+            />
+            <Action
+              label="Reset the count"
+              onPress={() => {
+                gate?.resetUsage();
+                setUsage(gate?.getUsage() ?? null);
+              }}
             />
             <Action
               label="Open accessibility settings"

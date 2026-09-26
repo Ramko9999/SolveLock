@@ -138,6 +138,14 @@ Two things cost time and will cost it again:
 The count is usage, not wall-clock. Unlike iOS, we can show this number to the
 child, because we own it.
 
+**Done, 2026-09-26.** Chrome was in front from 18:12:51 to 18:13:28, and the
+count read 0:37 of 2:00. It did not move in the next 20 seconds outside Chrome.
+
+The count lives in the accessibility service, not in the screens, because the
+service outlives them. It is written to SharedPreferences, so a reboot does not
+hand the child a free hour. A screen-off broadcast stops the clock, so a phone
+in a pocket does not burn the quota.
+
 ### A5 — The block screen appears
 
 **Test:** spend the quota, then open the app.

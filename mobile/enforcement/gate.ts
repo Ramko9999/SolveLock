@@ -2,11 +2,16 @@ import { Platform } from "react-native";
 import type {
   ForegroundApp,
   InstalledApp,
+  Usage,
 } from "@/modules/solvelock-gate/src/SolveLockGate.types";
 
 type Gate = {
   getForegroundApp(): ForegroundApp;
   getInstalledApps(): Promise<InstalledApp[]>;
+  getUsage(): Usage | null;
+  setGatedPackages(packages: string[]): boolean;
+  setQuotaMinutes(minutes: number): boolean;
+  resetUsage(): boolean;
   isAccessibilityEnabled(): boolean;
   openAccessibilitySettings(): boolean;
 };
@@ -21,4 +26,4 @@ export const gate: Gate | null =
         .default as Gate | null)
     : null;
 
-export type { ForegroundApp, InstalledApp };
+export type { ForegroundApp, InstalledApp, Usage };
