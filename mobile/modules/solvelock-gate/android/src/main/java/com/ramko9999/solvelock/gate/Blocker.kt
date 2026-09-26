@@ -3,34 +3,20 @@ package com.ramko9999.solvelock.gate
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.provider.Settings
 
 /**
- * Puts our screen in front of the gated app. Android stops most apps from
- * starting an Activity from the background; "display over other apps" is the
- * permission that lets us, and the setup screen asks for it.
+ * Opens the app, and relaunches the game afterwards. The covering itself lives
+ * in [BlockOverlay] -- starting an Activity over the game is a race we cannot
+ * win, because a launch is a sequence of Activity starts and the last one wins.
  */
 object Blocker {
-  /**
-   * One launch can fire two events, so ignore an immediate repeat. Keep this
-   * short: an app with a splash screen takes focus back a moment later, and we
-   * have to cover it again.
-   */
-  private const val QUIET_MILLIS = 400L
-
-  @Volatile
-  private var lastShownAt = 0L
-
   fun canDrawOverlays(context: Context): Boolean =
     Settings.canDrawOverlays(context)
 
-  fun show(context: Context, packageName: String) {
-    val now = System.currentTimeMillis()
-    if (now - lastShownAt < QUIET_MILLIS) {
-      return
-    }
-    lastShownAt = now
-
+  /** Called when the child taps Start on the overlay, so nothing races us. */
+  fun openProblems(context: Context, packageName: String) {
     GateState.blockedPackage = packageName
     GateState.blockListener?.invoke(packageName)
 
@@ -39,6 +25,7 @@ object Blocker {
       ?: return
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    Log.d("SolveLockGate", "opening problems for $packageName")
     context.startActivity(intent)
   }
 

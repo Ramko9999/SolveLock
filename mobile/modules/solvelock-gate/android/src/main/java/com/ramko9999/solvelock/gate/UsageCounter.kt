@@ -103,6 +103,12 @@ object UsageCounter {
   }
 
   @Synchronized
+  fun quotaMinutes(context: Context): Int {
+    load(context)
+    return Math.max(1, Math.round(quotaMillis / 60_000.0).toInt())
+  }
+
+  @Synchronized
   fun shouldBlock(context: Context, packageName: String?): Boolean {
     load(context)
     if (packageName == null || !gated.contains(packageName)) {

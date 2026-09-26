@@ -164,14 +164,35 @@ from the background. The second is what "display over other apps" is for.
 **Done, 2026-09-26.** Android allowed the start with `BAL_ALLOW_SAW_PERMISSION`,
 so the overlay permission is what makes it work. Two things cost a cycle:
 
-- **An app with a splash screen takes the screen back.** Chrome fires a second
-  window event for the same package, so a handler that only acts on a *change*
-  covers the first screen and loses the second. Act on every event for a gated
-  package and rate-limit instead.
+- **Starting an Activity over the game is a race we cannot win.** A launch is
+  not one event: Chrome's launcher Activity starts `FirstRunActivity` 108ms
+  *after* our cover, and the last `startActivity` wins. Android has no notion
+  of one app blocking another, so both of us are only starting Activities.
+  Games have longer launch chains than Chrome, not shorter.
+
+  The fix is to stop racing. The block screen is now a window
+  (`TYPE_APPLICATION_OVERLAY`, via the "display over other apps" permission we
+  already ask for). A window sits above every Activity, so the game can start
+  as many as it likes underneath and none reach the front. This is almost
+  certainly why ScreenZen asks for that permission when an accessibility
+  service could start an Activity without it.
+
+- **The overlay reports itself.** It is our window, so it fires its own
+  window-change event. Reading that as "the child left the game" hides the
+  cover we just added, and the two flicker many times a second. Our own package
+  never moves the cover.
 - **The development client swallows our URL scheme.** `solvelock://blocked`
   brought the app forward but never reached the router. The service now sets a
   flag the app reads when it becomes active, which works whether the app was
   running or not.
+
+The overlay *is* the block screen on Android, so the child taps Start once and
+lands on the problems. `app/blocked.tsx` stays for iOS, where the child arrives
+through a notification instead.
+
+**Home still works.** The overlay covers the gated app only, and hides the
+moment anything else comes to the front. We gate an app; we do not cage a
+child.
 
 ### A6 — The child solves and goes back to the game
 

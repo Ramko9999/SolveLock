@@ -42,9 +42,9 @@ export default function RootLayout() {
     gate.setQuotaMinutes(quotaMinutes);
   }, [hydrated, gatedPackages, quotaMinutes]);
 
-  // The service brings the app forward and leaves a flag. We read it here
-  // rather than from a deep link, because the development client swallows our
-  // URL scheme, and this works whether the app was already running or not.
+  // The overlay is the block screen on Android, and the child already tapped
+  // Start on it, so open the problems directly. A deep link cannot carry this:
+  // the development client swallows our URL scheme.
   useEffect(() => {
     const native = gate;
     if (!native) {
@@ -52,7 +52,7 @@ export default function RootLayout() {
     }
     const open = () => {
       if (native.getBlockedPackage()) {
-        router.replace("/blocked");
+        router.replace("/solve");
       }
     };
     open();

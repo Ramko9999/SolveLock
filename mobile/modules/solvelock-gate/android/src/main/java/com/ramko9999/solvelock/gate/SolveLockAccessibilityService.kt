@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 
 /**
@@ -18,6 +19,7 @@ class SolveLockAccessibilityService : AccessibilityService() {
     override fun onReceive(context: Context?, intent: Intent?) {
       GateState.report(null)
       UsageCounter.onForeground(this@SolveLockAccessibilityService, null)
+      BlockOverlay.hide()
     }
   }
 
@@ -28,6 +30,7 @@ class SolveLockAccessibilityService : AccessibilityService() {
 
   override fun onUnbind(intent: Intent?): Boolean {
     UsageCounter.onForeground(this, null)
+    BlockOverlay.hide()
     try {
       unregisterReceiver(screenOff)
     } catch (error: IllegalArgumentException) {
@@ -49,11 +52,24 @@ class SolveLockAccessibilityService : AccessibilityService() {
     if (GateState.report(packageName)) {
       UsageCounter.onForeground(this, packageName)
     }
-    // Deliberately outside the change test. An app with a splash screen fires a
-    // second event for the same package and takes the screen back from us, and
-    // that second event must cover it again. Blocker rate-limits the repeats.
+    // The overlay is a window of ours, so it reports itself. Reading that as
+    // "the child left the game" makes us hide the cover we just added, and the
+    // pair flickers many times a second. Our own windows never move the cover.
+    if (packageName == getPackageName()) {
+      return
+    }
     if (over) {
-      Blocker.show(this, packageName)
+      cover(packageName)
+    } else {
+      // Home, the launcher, or any app we do not gate. Get out of the way.
+      BlockOverlay.hide()
+    }
+  }
+
+  private fun cover(packageName: String) {
+    BlockOverlay.show(this, UsageCounter.quotaMinutes(this)) {
+      BlockOverlay.hide()
+      Blocker.openProblems(this, packageName)
     }
   }
 
