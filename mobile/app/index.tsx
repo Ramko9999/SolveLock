@@ -1,7 +1,11 @@
 import { Redirect, useRouter } from "expo-router";
-import { Pressable, StyleSheet } from "react-native";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { useQuotaStore } from "@/store/quota";
-import { describeSelection, useSetupStore } from "@/store/setup";
+import {
+  describeGatedPackages,
+  describeSelection,
+  useSetupStore,
+} from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
@@ -62,13 +66,17 @@ export default function HomeScreen() {
   const router = useRouter();
   const background = useColor(AppColor.background);
   const selection = useSetupStore((s) => s.selection);
+  const gatedPackages = useSetupStore((s) => s.gatedPackages);
+  const isIOS = Platform.OS === "ios";
   const status = useQuotaStore((s) => s.status);
 
   if (status === "reached") {
     return <Redirect href="/blocked" />;
   }
 
-  const isSetUp = (selection?.categoryCount ?? 0) > 0;
+  const isSetUp = isIOS
+    ? (selection?.categoryCount ?? 0) > 0
+    : gatedPackages.length > 0;
 
   return (
     <View style={[homeStyles.container, { backgroundColor: background }]}>
@@ -85,7 +93,9 @@ export default function HomeScreen() {
         </Text>
         {isSetUp ? (
           <Text sneutral semibold>
-            {describeSelection(selection)}
+            {isIOS
+              ? describeSelection(selection)
+              : describeGatedPackages(gatedPackages)}
           </Text>
         ) : null}
       </View>

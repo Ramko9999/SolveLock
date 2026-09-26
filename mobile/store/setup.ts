@@ -21,12 +21,15 @@ export const QUOTA_CHOICES = [1, 2, 5, 30] as const;
 
 type SetupState = {
   selection: Selection | null;
+  /** Android only. iOS never tells us a bundle id, so it uses `selection`. */
+  gatedPackages: string[];
   quotaMinutes: number;
   /** When we last called startMonitoring. Wall-clock, not usage -- iOS never
    *  reports a running total, so this is elapsed time, not quota consumed. */
   armedAt: number | null;
   hydrated: boolean;
   setSelection: (selection: Selection) => void;
+  toggleGatedPackage: (packageName: string) => void;
   setQuotaMinutes: (minutes: number) => void;
   setArmedAt: (armedAt: number | null) => void;
   clearSelection: () => void;
@@ -37,13 +40,20 @@ export const useSetupStore = create<SetupState>()(
   persist(
     (set) => ({
       selection: null,
+      gatedPackages: [],
       quotaMinutes: DEFAULT_QUOTA_MINUTES,
       armedAt: null,
       hydrated: false,
       setSelection: (selection) => set({ selection }),
+      toggleGatedPackage: (packageName) =>
+        set((state) => ({
+          gatedPackages: state.gatedPackages.includes(packageName)
+            ? state.gatedPackages.filter((name) => name !== packageName)
+            : [...state.gatedPackages, packageName],
+        })),
       setQuotaMinutes: (quotaMinutes) => set({ quotaMinutes }),
       setArmedAt: (armedAt) => set({ armedAt }),
-      clearSelection: () => set({ selection: null }),
+      clearSelection: () => set({ selection: null, gatedPackages: [] }),
       setHydrated: () => set({ hydrated: true }),
     }),
     {
@@ -51,6 +61,7 @@ export const useSetupStore = create<SetupState>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         selection: state.selection,
+        gatedPackages: state.gatedPackages,
         quotaMinutes: state.quotaMinutes,
         armedAt: state.armedAt,
       }),
@@ -60,6 +71,13 @@ export const useSetupStore = create<SetupState>()(
     },
   ),
 );
+
+export function describeGatedPackages(gatedPackages: string[]) {
+  if (gatedPackages.length === 0) {
+    return "Nothing selected yet";
+  }
+  return `${gatedPackages.length} ${gatedPackages.length === 1 ? "app" : "apps"}`;
+}
 
 export function describeSelection(selection: Selection | null) {
   if (!selection) {

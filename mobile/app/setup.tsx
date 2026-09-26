@@ -6,7 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AuthorizationState } from "@/enforcement";
 import { enforcement } from "@/enforcement";
 import { useQuotaStore } from "@/store/quota";
-import { describeSelection, useSetupStore } from "@/store/setup";
+import {
+  describeGatedPackages,
+  describeSelection,
+  useSetupStore,
+} from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
@@ -94,6 +98,7 @@ export default function SetupScreen() {
   const accent = useColor(AppColor.accent);
   const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
+  const gatedPackages = useSetupStore((s) => s.gatedPackages);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setArmedAt = useSetupStore((s) => s.setArmedAt);
   const startQuota = useQuotaStore((s) => s.startQuota);
@@ -106,8 +111,9 @@ export default function SetupScreen() {
   // permissions stand in for it, and only the native module can read them.
   const isIOS = Platform.OS === "ios";
   const approved = isIOS ? authorization === "approved" : true;
-  const picked =
-    (selection?.categoryCount ?? 0) + (selection?.applicationCount ?? 0) > 0;
+  const picked = isIOS
+    ? (selection?.categoryCount ?? 0) + (selection?.applicationCount ?? 0) > 0
+    : gatedPackages.length > 0;
   const ready = approved && picked;
 
   const authorize = async () => {
@@ -173,7 +179,11 @@ export default function SetupScreen() {
         />
         <SettingRow
           label="Gated apps"
-          value={describeSelection(selection)}
+          value={
+            isIOS
+              ? describeSelection(selection)
+              : describeGatedPackages(gatedPackages)
+          }
           onPress={approved ? () => router.push("/picker") : undefined}
         />
         <SettingRow label="Check every" value={`${quotaMinutes} minutes`} />

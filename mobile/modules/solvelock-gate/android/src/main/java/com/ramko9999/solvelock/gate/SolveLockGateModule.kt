@@ -18,6 +18,12 @@ class SolveLockGateModule : Module() {
       )
     }
 
+    AsyncFunction("getInstalledApps") {
+      val context = appContext.reactContext
+        ?: return@AsyncFunction emptyList<Map<String, Any?>>()
+      InstalledApps.list(context)
+    }
+
     Function("isAccessibilityEnabled") {
       val context = appContext.reactContext ?: return@Function false
       GateState.isAccessibilityEnabled(context)

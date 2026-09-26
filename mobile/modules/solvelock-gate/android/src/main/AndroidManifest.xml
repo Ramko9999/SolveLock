@@ -13,6 +13,15 @@
     android:name="android.permission.QUERY_ALL_PACKAGES"
     tools:node="remove" />
 
+  <!-- Only the apps a person can launch. QUERY_ALL_PACKAGES would show the
+       rest and bring its own Play review form. -->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.LAUNCHER" />
+    </intent>
+  </queries>
+
   <application>
     <service
       android:name="com.ramko9999.solvelock.gate.SolveLockAccessibilityService"
