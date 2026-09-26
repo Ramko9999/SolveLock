@@ -1,7 +1,13 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
+import {
+  DarkTheme,
+  DefaultTheme,
+  router,
+  Stack,
+  ThemeProvider,
+} from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { useColorScheme } from "react-native";
+import { AppState, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enforcement } from "@/enforcement";
 import { gate } from "@/enforcement/gate";
@@ -35,6 +41,28 @@ export default function RootLayout() {
     gate.setGatedPackages(gatedPackages);
     gate.setQuotaMinutes(quotaMinutes);
   }, [hydrated, gatedPackages, quotaMinutes]);
+
+  // The service brings the app forward and leaves a flag. We read it here
+  // rather than from a deep link, because the development client swallows our
+  // URL scheme, and this works whether the app was already running or not.
+  useEffect(() => {
+    const native = gate;
+    if (!native) {
+      return;
+    }
+    const open = () => {
+      if (native.getBlockedPackage()) {
+        router.replace("/blocked");
+      }
+    };
+    open();
+    const state = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
+        open();
+      }
+    });
+    return () => state.remove();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

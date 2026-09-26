@@ -153,6 +153,18 @@ in a pocket does not burn the quota.
 **What can go wrong:** the screen appears late, or Android refuses to start it
 from the background. The second is what "display over other apps" is for.
 
+**Done, 2026-09-26.** Android allowed the start with `BAL_ALLOW_SAW_PERMISSION`,
+so the overlay permission is what makes it work. Two things cost a cycle:
+
+- **An app with a splash screen takes the screen back.** Chrome fires a second
+  window event for the same package, so a handler that only acts on a *change*
+  covers the first screen and loses the second. Act on every event for a gated
+  package and rate-limit instead.
+- **The development client swallows our URL scheme.** `solvelock://blocked`
+  brought the app forward but never reached the router. The service now sets a
+  flag the app reads when it becomes active, which works whether the app was
+  running or not.
+
 ### A6 — The child solves and goes back to the game
 
 The child answers three problems. The block clears. **We relaunch the game.**

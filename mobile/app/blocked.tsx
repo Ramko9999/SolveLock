@@ -49,7 +49,7 @@ export default function BlockedScreen() {
       <View style={blockedStyles.content}>
         <View style={blockedStyles.heading}>
           <Text huger black>
-            {quotaMinutes} minutes.
+            {quotaMinutes} {quotaMinutes === 1 ? "minute" : "minutes"}.
           </Text>
           <Text larger semibold muted>
             Solve 3 and you're back in.

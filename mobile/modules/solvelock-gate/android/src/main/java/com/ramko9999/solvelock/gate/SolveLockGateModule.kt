@@ -9,7 +9,7 @@ class SolveLockGateModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("SolveLockGate")
 
-    Events("onForegroundApp")
+    Events("onForegroundApp", "onBlocked")
 
     Function("getForegroundApp") {
       mapOf(
@@ -47,6 +47,31 @@ class SolveLockGateModule : Module() {
       true
     }
 
+    Function("getBlockedPackage") {
+      GateState.blockedPackage
+    }
+
+    Function("clearBlocked") {
+      GateState.blockedPackage = null
+      true
+    }
+
+    Function("canDrawOverlays") {
+      val context = appContext.reactContext ?: return@Function false
+      Blocker.canDrawOverlays(context)
+    }
+
+    Function("openOverlaySettings") {
+      val context = appContext.reactContext ?: return@Function false
+      Blocker.openOverlaySettings(context)
+      true
+    }
+
+    Function("launchApp") { packageName: String ->
+      val context = appContext.reactContext ?: return@Function false
+      Blocker.launch(context, packageName)
+    }
+
     Function("isAccessibilityEnabled") {
       val context = appContext.reactContext ?: return@Function false
       GateState.isAccessibilityEnabled(context)
@@ -67,10 +92,14 @@ class SolveLockGateModule : Module() {
           mapOf("packageName" to packageName, "changedAt" to changedAt.toDouble())
         )
       }
+      GateState.blockListener = { packageName ->
+        sendEvent("onBlocked", mapOf("packageName" to packageName))
+      }
     }
 
     OnStopObserving {
       GateState.listener = null
+      GateState.blockListener = null
     }
   }
 }

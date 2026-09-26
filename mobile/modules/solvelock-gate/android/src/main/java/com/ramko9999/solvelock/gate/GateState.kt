@@ -22,6 +22,17 @@ object GateState {
 
   var listener: ((String?, Long) -> Unit)? = null
 
+  /**
+   * The gated app the child tried to open after the quota ran out. The screens
+   * read this instead of a deep link: the development client swallows our URL
+   * scheme, and a flag the app reads on resume works whether the app was
+   * running or not.
+   */
+  @Volatile
+  var blockedPackage: String? = null
+
+  var blockListener: ((String) -> Unit)? = null
+
   /** True when this is a change, so the caller can act on it once. */
   fun report(packageName: String?): Boolean {
     if (packageName == foregroundPackage) {

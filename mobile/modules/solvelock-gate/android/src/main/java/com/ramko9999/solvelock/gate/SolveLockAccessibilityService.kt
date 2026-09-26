@@ -45,8 +45,15 @@ class SolveLockAccessibilityService : AccessibilityService() {
     if (packageName == "com.android.systemui") {
       return
     }
+    val over = UsageCounter.shouldBlock(this, packageName)
     if (GateState.report(packageName)) {
       UsageCounter.onForeground(this, packageName)
+    }
+    // Deliberately outside the change test. An app with a splash screen fires a
+    // second event for the same package and takes the screen back from us, and
+    // that second event must cover it again. Blocker rate-limits the repeats.
+    if (over) {
+      Blocker.show(this, packageName)
     }
   }
 

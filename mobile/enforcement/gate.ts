@@ -12,6 +12,11 @@ type Gate = {
   setGatedPackages(packages: string[]): boolean;
   setQuotaMinutes(minutes: number): boolean;
   resetUsage(): boolean;
+  getBlockedPackage(): string | null;
+  clearBlocked(): boolean;
+  canDrawOverlays(): boolean;
+  openOverlaySettings(): boolean;
+  launchApp(packageName: string): boolean;
   isAccessibilityEnabled(): boolean;
   openAccessibilitySettings(): boolean;
 };

@@ -5,6 +5,9 @@
     android:name="android.permission.PACKAGE_USAGE_STATS"
     tools:ignore="ProtectedPermissions" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <!-- Lets the service start our screen over the gated app. Android blocks a
+       background Activity start without it. -->
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
   <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
   <!-- Something in the tree may pull this in. It has its own Play review

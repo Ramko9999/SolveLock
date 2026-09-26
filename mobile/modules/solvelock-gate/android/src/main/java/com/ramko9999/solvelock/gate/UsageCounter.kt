@@ -103,6 +103,16 @@ object UsageCounter {
   }
 
   @Synchronized
+  fun shouldBlock(context: Context, packageName: String?): Boolean {
+    load(context)
+    if (packageName == null || !gated.contains(packageName)) {
+      return false
+    }
+    val live = if (since > 0L) System.currentTimeMillis() - since else 0L
+    return usedMillis + live >= quotaMillis
+  }
+
+  @Synchronized
   fun snapshot(context: Context): Map<String, Any?> {
     load(context)
     val live = if (since > 0L) System.currentTimeMillis() - since else 0L
