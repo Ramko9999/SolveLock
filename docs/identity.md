@@ -45,23 +45,33 @@ Parents with kids in elementary and middle school. That's where it hits hardest.
 These come from Apple's Screen Time API and are not negotiable — they shape the
 product, so decide against them rather than around them.
 
-1. **Opening our app from the shield is possible, but unofficial.** Apple
-   documents no route. `ShieldActionResponse` is only `none` / `close` /
-   `defer`, `UIApplication` is unavailable in an extension, and the forums say
-   it cannot be done.
+1. **The shield reaches our app by notification. Ship that.** The child taps
+   the shield button, a local notification arrives, and the child taps it. That
+   works today. It needs notification permission, which the library posts
+   without ever requesting, so we request it during setup.
 
-   It can. ScreenZen does it, tested 2026-09-26, and it leaves the iOS back
-   breadcrumb — so it is a real app-to-app open, not a notification tap.
+   A direct open is possible for somebody. ScreenZen does it, observed
+   2026-09-26, and it leaves the iOS back breadcrumb — which only appears on a
+   real app-to-app open, never on a notification tap. **We do not know how.**
 
-   Two details decide it, and we had neither at first:
-   `openUrlWithDispatch` rather than `openUrl`, because
-   `NSExtensionContext.open` fails silently off the main thread; and a `delay`,
-   because answering `.close` at once lets iOS tear the extension down before
-   the scheduled block runs. The library's newer `{ type: "openApp" }` action
-   also hardcodes `device-activity://`, so it opens nothing — pass our own
-   `url`. None of the three fields appear in its TypeScript types.
+   What we tried and what it cost:
 
-   Keep the local notification as a fallback until this is proven on device.
+   - `{ type: "openApp" }` hardcodes `device-activity://` (its own TODO admits
+     this), so it opened a URL nothing handles. Pass our own `url` instead.
+   - `type: "openUrlWithDispatch"` with a `delay`, on the theory that
+     `NSExtensionContext.open` fails off the main thread and that answering
+     `.close` at once lets iOS stop the extension first. Both blocks in
+     `handleShieldAction` do run — there is no early return between them — so
+     the branch executed. Nothing opened.
+
+   So `NSExtensionContext().open` on a detached context does nothing, and the
+   library builds a detached one because `ShieldActionDelegate` has no
+   `extensionContext` to borrow. Apple documents no supported route. Some apps
+   use private APIs and accept the review risk.
+
+   Settings keeps a diagnostic that points the shield at `https://apple.com`.
+   If Safari opens, the mechanism works and our scheme is at fault. If nothing
+   opens, the mechanism is dead. That test is unrun.
 
 2. **Unlock windows have a 15-minute floor.** `DeviceActivitySchedule` intervals
    can't be shorter, so "solve 3, get back in" can't hand back less than 15
