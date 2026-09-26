@@ -1,8 +1,13 @@
 node_modules/
 .expo/
-ios/
-android/
 dist/
+
+# Prebuild output at the root only. A leading slash matters: a bare "android/"
+# would also swallow the Kotlin sources of every local module.
+/ios/
+/android/
+modules/*/android/build/
+modules/*/ios/build/
 *.log
 .DS_Store
 

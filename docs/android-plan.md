@@ -102,6 +102,20 @@ The name changes within a second.
 
 **Why first:** everything below depends on it.
 
+**Result, 2026-09-26, Pixel emulator, Android 16.** The service saw Chrome in
+the same second that the launch command ran (17:58:35.0 to 17:58:35). The delay
+is below one second, so we do not need a poll, and a check on each window change
+is fast enough for A5.
+
+Two things cost time and will cost it again:
+
+- A local Expo module needs a **native rebuild**. A JS reload cannot add it, and
+  the app shows a blank screen if `requireNativeModule` throws at module scope.
+  Use `requireOptionalNativeModule` and let the screen say the module is missing.
+- `adb shell am force-stop` **unbinds the accessibility service**, and Android
+  clears `enabled_accessibility_services`. Grant it after the last restart, not
+  before.
+
 ### A4 — The phone counts the minutes
 
 **Test:** set the quota to two minutes. Play. Watch the count rise.

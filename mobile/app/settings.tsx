@@ -1,9 +1,10 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Diagnostics } from "@/enforcement";
 import { enforcement } from "@/enforcement";
+import { type ForegroundApp, gate } from "@/enforcement/gate";
 import { useQuotaStore } from "@/store/quota";
 import { QUOTA_CHOICES, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
@@ -204,6 +205,27 @@ export default function SettingsScreen() {
   const [report, setReport] = useState<Diagnostics | null>(null);
   const armedAt = useSetupStore((s) => s.armedAt);
   const elapsed = useElapsed(armedAt);
+  const [watching, setWatching] = useState(false);
+  const [seen, setSeen] = useState<ForegroundApp[]>([]);
+
+  useEffect(() => {
+    const native = gate;
+    if (!native || !watching) {
+      return;
+    }
+    const timer = setInterval(() => {
+      const now = native.getForegroundApp();
+      if (!now.packageName) {
+        return;
+      }
+      setSeen((history) =>
+        history[0]?.changedAt === now.changedAt
+          ? history
+          : [now, ...history].slice(0, 5),
+      );
+    }, 250);
+    return () => clearInterval(timer);
+  }, [watching]);
 
   return (
     <View
@@ -271,6 +293,47 @@ export default function SettingsScreen() {
             onPress={() => router.push("/picker")}
           />
         </Section>
+
+        {Platform.OS === "android" && !gate ? (
+          <Section title="Foreground app">
+            <Fact
+              label="native module"
+              value="MISSING - rebuild the app, do not just reload JS"
+            />
+          </Section>
+        ) : null}
+
+        {Platform.OS === "android" && gate ? (
+          <Section title="Foreground app">
+            <Fact
+              label="accessibility"
+              value={
+                gate.isAccessibilityEnabled()
+                  ? "on"
+                  : "OFF - grant it in Android settings"
+              }
+            />
+            {seen.length === 0 ? (
+              <Fact label="package" value="nothing seen yet" />
+            ) : (
+              seen.map((app) => (
+                <Fact
+                  key={app.changedAt}
+                  label={new Date(app.changedAt).toLocaleTimeString()}
+                  value={app.packageName ?? "-"}
+                />
+              ))
+            )}
+            <Action
+              label={watching ? "Stop watching" : "Start watching"}
+              onPress={() => setWatching((on) => !on)}
+            />
+            <Action
+              label="Open accessibility settings"
+              onPress={() => gate?.openAccessibilitySettings()}
+            />
+          </Section>
+        ) : null}
 
         <Section title="Shield open test">
           <Action

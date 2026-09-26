@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="solvelock_accessibility_label">SolveLock</string>
+  <string name="solvelock_accessibility_description">Lets SolveLock see which app is open, so it can show math problems when the time is up.</string>
+</resources>
