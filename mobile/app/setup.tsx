@@ -102,7 +102,10 @@ export default function SetupScreen() {
     enforcement.getAuthorization(),
   );
 
-  const approved = authorization === "approved";
+  // Screen Time authorization is an iOS concept. On Android the four
+  // permissions stand in for it, and only the native module can read them.
+  const isIOS = Platform.OS === "ios";
+  const approved = isIOS ? authorization === "approved" : true;
   const picked =
     (selection?.categoryCount ?? 0) + (selection?.applicationCount ?? 0) > 0;
   const ready = approved && picked;
@@ -149,18 +152,20 @@ export default function SetupScreen() {
           </Text>
         </View>
 
-        {Platform.OS === "android" ? (
+        {isIOS ? null : (
           <SettingRow
             label="Permissions"
             value="Four Android settings screens"
             onPress={() => router.push("/permissions")}
           />
+        )}
+        {isIOS ? (
+          <SettingRow
+            label="Screen Time access"
+            value={authorizationValue}
+            onPress={approved ? undefined : authorize}
+          />
         ) : null}
-        <SettingRow
-          label="Screen Time access"
-          value={authorizationValue}
-          onPress={approved ? undefined : authorize}
-        />
         <SettingRow
           label="Notifications"
           value={notifications ? "Allowed" : "Tap to allow"}
