@@ -31,15 +31,6 @@
           "appGroup": "group.com.ramko9999.solvelock"
         }
       ],
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
       "expo-font"
     ],
     "experiments": {
