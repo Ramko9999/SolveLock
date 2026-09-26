@@ -47,6 +47,16 @@ class SolveLockGateModule : Module() {
       true
     }
 
+    Function("getPermissionStatus") {
+      val context = appContext.reactContext ?: return@Function emptyMap<String, Boolean>()
+      Permissions.status(context)
+    }
+
+    Function("openPermission") { id: String ->
+      val context = appContext.reactContext ?: return@Function false
+      Permissions.open(context, id)
+    }
+
     Function("getBlockedPackage") {
       GateState.blockedPackage
     }

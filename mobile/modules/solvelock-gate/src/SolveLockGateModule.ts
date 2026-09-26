@@ -13,6 +13,8 @@ declare class SolveLockGateModule extends NativeModule<SolveLockGateModuleEvents
   setGatedPackages(packages: string[]): boolean;
   setQuotaMinutes(minutes: number): boolean;
   resetUsage(): boolean;
+  getPermissionStatus(): Record<string, boolean>;
+  openPermission(id: string): boolean;
   getBlockedPackage(): string | null;
   clearBlocked(): boolean;
   canDrawOverlays(): boolean;

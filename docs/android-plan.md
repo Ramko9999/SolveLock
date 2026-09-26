@@ -97,6 +97,14 @@ grants it and comes back. The app notices and moves to the next item.
 **Why it matters:** [identity.md](identity.md) says setup is where parents give
 up. Four trips into Android settings is a lot.
 
+**Done, 2026-09-26. Three, not four.** We asked for app usage access and never
+used it: the foreground app comes from the accessibility service. It is gone.
+
+Each row reads its real state and turns to a tick the moment the parent comes
+back, and Setup will not let them finish until all three are granted. Android
+opens the *list* of apps for "display over other apps" even with a
+`package:` URI, so the parent still has to find SolveLock in it.
+
 ### A2 — The parent picks apps
 
 The parent sees the apps on the phone, with real icons and real names. They

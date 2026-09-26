@@ -1,6 +1,8 @@
 import { useRouter } from "expo-router";
-import { Linking, Pressable, ScrollView, StyleSheet } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { AppState, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { gate } from "@/enforcement/gate";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
@@ -10,34 +12,23 @@ type Permission = {
   id: string;
   name: string;
   why: string;
-  /** The Android settings screen that grants it. */
-  intent: string;
 };
 
 const PERMISSIONS: Permission[] = [
   {
-    id: "usage",
-    name: "App usage access",
-    why: "Lets us see which app is open, and count the minutes.",
-    intent: "android.settings.USAGE_ACCESS_SETTINGS",
+    id: "accessibility",
+    name: "Accessibility service",
+    why: "Tells us the instant an app opens, so we know what to gate.",
   },
   {
     id: "overlay",
     name: "Display over other apps",
-    why: "Lets us cover a game with the problems. Also lets us open ourselves from the background.",
-    intent: "android.settings.action.MANAGE_OVERLAY_PERMISSION",
-  },
-  {
-    id: "accessibility",
-    name: "Accessibility service",
-    why: "Tells us the instant an app opens. Without it we must poll, which is slower and costs battery.",
-    intent: "android.settings.ACCESSIBILITY_SETTINGS",
+    why: "Lets us cover a game with the problems.",
   },
   {
     id: "battery",
     name: "Ignore battery optimisation",
     why: "Stops Android from putting us to sleep.",
-    intent: "android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS",
   },
 ];
 
@@ -48,6 +39,14 @@ const permissionRowStyles = StyleSheet.create({
     paddingVertical: "5%",
     paddingHorizontal: "5%",
     borderRadius: Radius.xxl,
+  },
+  title: {
+    ...StyleUtils.flexRow(8),
+    alignItems: "center",
+    width: "100%",
+  },
+  name: {
+    flex: 1,
   },
   grant: {
     ...StyleUtils.flexRowCenterAll(),
@@ -60,29 +59,37 @@ const permissionRowStyles = StyleSheet.create({
 
 type PermissionRowProps = {
   permission: Permission;
+  granted: boolean;
   onGrant: () => void;
 };
 
-function PermissionRow({ permission, onGrant }: PermissionRowProps) {
+function PermissionRow({ permission, granted, onGrant }: PermissionRowProps) {
   const fill = useColor(AppColor.fill);
   const accent = useColor(AppColor.accent);
 
   return (
     <View style={[permissionRowStyles.container, { backgroundColor: fill }]}>
-      <Text large bold>
-        {permission.name}
-      </Text>
+      <View style={permissionRowStyles.title}>
+        <Text large bold style={permissionRowStyles.name}>
+          {permission.name}
+        </Text>
+        <Text neutral bold correct={granted} muted={!granted}>
+          {granted ? "✓" : "needed"}
+        </Text>
+      </View>
       <Text small muted>
         {permission.why}
       </Text>
-      <Pressable
-        onPress={onGrant}
-        style={[permissionRowStyles.grant, { backgroundColor: accent }]}
-      >
-        <Text small extrabold onFilled>
-          Open settings
-        </Text>
-      </Pressable>
+      {granted ? null : (
+        <Pressable
+          onPress={onGrant}
+          style={[permissionRowStyles.grant, { backgroundColor: accent }]}
+        >
+          <Text small extrabold onFilled>
+            Open settings
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -114,6 +121,24 @@ export default function PermissionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const background = useColor(AppColor.background);
+  const [status, setStatus] = useState<Record<string, boolean>>({});
+
+  // Android grants happen on its own screens, so re-read when we come back.
+  const refresh = useCallback(() => {
+    setStatus(gate?.getPermissionStatus() ?? {});
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const listener = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
+        refresh();
+      }
+    });
+    return () => listener.remove();
+  }, [refresh]);
+
+  const remaining = PERMISSIONS.filter((one) => !status[one.id]).length;
 
   return (
     <View
@@ -129,7 +154,7 @@ export default function PermissionsScreen() {
           </Text>
         </Pressable>
         <Text huge bold>
-          Four permissions
+          {remaining === 0 ? "All set" : `${remaining} left`}
         </Text>
         <Text small muted>
           Android grants each one on its own settings screen. Tap, allow, then
@@ -141,7 +166,8 @@ export default function PermissionsScreen() {
           <PermissionRow
             key={permission.id}
             permission={permission}
-            onGrant={() => Linking.sendIntent(permission.intent)}
+            granted={status[permission.id] ?? false}
+            onGrant={() => gate?.openPermission(permission.id)}
           />
         ))}
       </ScrollView>

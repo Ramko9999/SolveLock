@@ -1,10 +1,11 @@
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Platform, Pressable, StyleSheet } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { AppState, Platform, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { AuthorizationState } from "@/enforcement";
 import { enforcement } from "@/enforcement";
+import { gate } from "@/enforcement/gate";
 import { useQuotaStore } from "@/store/quota";
 import {
   describeGatedPackages,
@@ -15,6 +16,10 @@ import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
 import { StyleUtils } from "@/theme/style-utils";
+
+function minutes(count: number) {
+  return `${count} ${count === 1 ? "minute" : "minutes"}`;
+}
 
 const settingRowStyles = StyleSheet.create({
   container: {
@@ -99,6 +104,7 @@ export default function SetupScreen() {
   const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
   const gatedPackages = useSetupStore((s) => s.gatedPackages);
+  const [permissionsLeft, setPermissionsLeft] = useState<number | null>(null);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setArmedAt = useSetupStore((s) => s.setArmedAt);
   const startQuota = useQuotaStore((s) => s.startQuota);
@@ -110,11 +116,35 @@ export default function SetupScreen() {
   // Screen Time authorization is an iOS concept. On Android the four
   // permissions stand in for it, and only the native module can read them.
   const isIOS = Platform.OS === "ios";
+
+  const refreshPermissions = useCallback(() => {
+    const native = gate;
+    if (!native) {
+      return;
+    }
+    const status = native.getPermissionStatus();
+    setPermissionsLeft(
+      ["accessibility", "overlay", "battery"].filter((id) => !status[id])
+        .length,
+    );
+  }, []);
+
+  useEffect(() => {
+    refreshPermissions();
+    const listener = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
+        refreshPermissions();
+      }
+    });
+    return () => listener.remove();
+  }, [refreshPermissions]);
+
   const approved = isIOS ? authorization === "approved" : true;
   const picked = isIOS
     ? (selection?.categoryCount ?? 0) + (selection?.applicationCount ?? 0) > 0
     : gatedPackages.length > 0;
-  const ready = approved && picked;
+  const permissionsDone = permissionsLeft === null || permissionsLeft === 0;
+  const ready = approved && picked && permissionsDone;
 
   const authorize = async () => {
     setAuthorization(await enforcement.requestAuthorization());
@@ -153,15 +183,21 @@ export default function SetupScreen() {
             Set up SolveLock
           </Text>
           <Text small muted>
-            Pick what to gate. After {quotaMinutes} minutes, three problems
-            unlock {quotaMinutes} more.
+            Pick what to gate. After {minutes(quotaMinutes)}, three problems
+            unlock {minutes(quotaMinutes)} more.
           </Text>
         </View>
 
         {isIOS ? null : (
           <SettingRow
             label="Permissions"
-            value="Four Android settings screens"
+            value={
+              permissionsLeft === null
+                ? "Three Android settings screens"
+                : permissionsLeft === 0
+                  ? "All granted"
+                  : `${permissionsLeft} still needed`
+            }
             onPress={() => router.push("/permissions")}
           />
         )}
@@ -186,7 +222,7 @@ export default function SetupScreen() {
           }
           onPress={approved ? () => router.push("/picker") : undefined}
         />
-        <SettingRow label="Check every" value={`${quotaMinutes} minutes`} />
+        <SettingRow label="Check every" value={minutes(quotaMinutes)} />
         <SettingRow label="Problems per check" value="3" />
 
         <View style={setupStyles.spacer} />
@@ -197,7 +233,11 @@ export default function SetupScreen() {
           style={[setupStyles.done, { backgroundColor: ready ? accent : fill }]}
         >
           <Text large extrabold onFilled={ready} muted={!ready}>
-            {ready ? "Done" : "Pick what to gate first"}
+            {ready
+              ? "Done"
+              : !picked
+                ? "Pick what to gate first"
+                : "Grant the permissions first"}
           </Text>
         </Pressable>
       </View>
