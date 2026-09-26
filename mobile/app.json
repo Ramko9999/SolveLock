@@ -90,6 +90,9 @@
         "projectId": "bd6b881b-3cb7-452a-b109-368733dff00b"
       }
     },
-    "owner": "ramko9999"
+    "owner": "ramko9999",
+    "android": {
+      "package": "com.ramko9999.solvelock"
+    }
   }
 }
