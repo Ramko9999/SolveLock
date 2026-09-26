@@ -60,22 +60,31 @@ const SHIELD: ShieldConfiguration = {
 };
 
 /**
- * Apple offers no public way to open our app from a shield, so the library
- * works around it. Two paths run here, and the extension executes both --
- * `actions` and the legacy `type` are separate `if` blocks in the Swift.
+ * Opening our app from the shield IS possible -- ScreenZen does it, and the
+ * iOS back breadcrumb it leaves proves it is a real app-to-app open, not a
+ * notification. Apple documents no supported route, so this is unofficial.
  *
- * `type: "openUrl"` reads our `url`. The newer `{ type: "openApp" }` action
- * does NOT: it hardcodes `device-activity://`, which is why it did nothing on
- * device. Neither `openUrl` nor `url` appears in the library's TypeScript
- * types even though the Swift handles both, hence the cast.
+ * Two details decide whether it works, and we had neither:
  *
- * The notification is the fallback, and needs permission we request in setup.
+ * 1. `openUrlWithDispatch`, not `openUrl`. NSExtensionContext.open fails
+ *    silently off the main thread; the library ships both variants for this.
+ * 2. `delay`. Without it the extension answers .close at once and iOS tears it
+ *    down, so a block just scheduled on the main queue never runs.
+ *
+ * `url` is ours. The newer `{ type: "openApp" }` action hardcodes
+ * `device-activity://`, which is why it opened nothing.
+ *
+ * Neither "openUrlWithDispatch" nor `url` nor `delay` is in the library's
+ * TypeScript types, though the Swift handles all three. Hence the cast.
+ *
+ * The notification stays until this is proven on device.
  */
 const SHIELD_ACTIONS = {
   primary: {
     behavior: "close",
-    type: "openUrl",
+    type: "openUrlWithDispatch",
     url: "solvelock://",
+    delay: 0.5,
     actions: [
       {
         type: "sendNotification",

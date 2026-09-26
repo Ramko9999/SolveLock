@@ -45,28 +45,41 @@ Parents with kids in elementary and middle school. That's where it hits hardest.
 These come from Apple's Screen Time API and are not negotiable — they shape the
 product, so decide against them rather than around them.
 
-1. **The shield cannot launch the app through Apple's API.**
-   `ShieldActionResponse` is only `none` / `close` / `defer`; there is no public
-   "open the parent app".
+1. **Opening our app from the shield is possible, but unofficial.** Apple
+   documents no route. `ShieldActionResponse` is only `none` / `close` /
+   `defer`, `UIApplication` is unavailable in an extension, and the forums say
+   it cannot be done.
 
-   `react-native-device-activity` works around it with
-   `NSExtensionContext().open(...)`. The newer `{ type: "openApp" }` action
-   **hardcodes `device-activity://`** — its own TODO admits this — which is why
-   it did nothing on device 2026-09-25. The older `type: "openUrl"` path reads a
-   `url` we supply, so we pass `solvelock://`. Neither appears in the library's
-   TypeScript types even though the Swift handles both.
+   It can. ScreenZen does it, tested 2026-09-26, and it leaves the iOS back
+   breadcrumb — so it is a real app-to-app open, not a notification tap.
 
-   Whether `open()` works at all on a detached `NSExtensionContext` is still
-   unverified, so keep the fallback: a local notification the child taps. It
-   needs notification permission, which the library posts without ever
-   requesting — we request it during setup.
+   Two details decide it, and we had neither at first:
+   `openUrlWithDispatch` rather than `openUrl`, because
+   `NSExtensionContext.open` fails silently off the main thread; and a `delay`,
+   because answering `.close` at once lets iOS tear the extension down before
+   the scheduled block runs. The library's newer `{ type: "openApp" }` action
+   also hardcodes `device-activity://`, so it opens nothing — pass our own
+   `url`. None of the three fields appear in its TypeScript types.
+
+   Keep the local notification as a fallback until this is proven on device.
 
 2. **Unlock windows have a 15-minute floor.** `DeviceActivitySchedule` intervals
    can't be shorter, so "solve 3, get back in" can't hand back less than 15
    minutes of access.
-3. **We never learn which apps are blocked.** Selections are opaque tokens — no
-   names, no bundle ids, no icons. We can render, count, and act on a selection
-   and nothing else.
+3. **We cannot read a selection, but we can display it.** Selections are opaque
+   tokens: no bundle ids, and nothing our JS can inspect. Two things are still
+   possible, and both were stated wrongly here before.
+
+   SwiftUI's `Label(applicationToken)` draws the real app icon and name. The
+   system renders it; our code never sees the values. The library exposes no
+   such view, so it needs a small native view of our own.
+
+   Inside the shield extension, `Application(token:).localizedDisplayName`
+   gives the blocked app's name as a string. So the shield and its notification
+   can say "Roblox".
+
+   What remains impossible is *launching* an app from a token, and reading any
+   of this from JavaScript.
 4. **The shield and monitor extensions can't be debugged live.** They run in
    separate processes and fail silently. They report back by writing to the
    shared App Group, which the app reads from JS.
