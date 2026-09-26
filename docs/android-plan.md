@@ -69,6 +69,21 @@ afterwards, once we know what both use.
 `app/solve.tsx` and `app/blocked.tsx` are plain React Native. They already work.
 **We are building the plumbing, not the product.**
 
+## Building for the emulator
+
+Pass the one CPU type the emulator uses:
+
+```
+./gradlew :app:assembleDebug -PreactNativeArchitectures=x86_64
+```
+
+`gradle.properties` lists four. Without the flag Gradle compiles C++ for all of
+them, in six projects, and the build takes about eight minutes instead of
+eleven seconds. `npx expo run:android` sets the flag for you; a direct Gradle
+command does not.
+
+`mobile/android/` is not in git, so this note is the only record.
+
 ## Milestones
 
 ### A1 — The parent grants permissions
