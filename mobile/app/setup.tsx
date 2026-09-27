@@ -143,7 +143,7 @@ export default function SetupScreen() {
   const approved = isIOS ? authorization === "approved" : true;
   const picked = isIOS
     ? (selection?.categoryCount ?? 0) + (selection?.applicationCount ?? 0) > 0
-    : gatedPackages.length > 0;
+    : gatedPackages.length + gatedCategories.length > 0;
   const permissionsDone = permissionsLeft === null || permissionsLeft === 0;
   const ready = approved && picked && permissionsDone;
 
