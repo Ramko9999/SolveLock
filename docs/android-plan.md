@@ -269,6 +269,14 @@ No shared abstraction with iOS yet.
 ## Before we ship (not now)
 
 - Accessibility declaration in the Play Console, with a video.
+- **A prominent in-app disclosure, and affirmative consent**, before we ask for
+  the accessibility permission. Google exempts apps that set
+  `isAccessibilityTool`, but that is only for services built for disabled
+  users. We are not one, so the exemption does not apply and the disclosure is
+  required. Our permission screen explains what the permission *does*, which is
+  not the same thing. Deceptive or undeclared use suspends the app and can
+  terminate the developer account.
+  https://support.google.com/googleplay/android-developer/answer/10964491
 - Data safety form.
 - The Families policy probably applies, because the child uses the app. It
   limits ads and third-party SDKs. Read it early.
