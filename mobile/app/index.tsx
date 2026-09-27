@@ -152,6 +152,7 @@ export default function HomeScreen() {
   const role = useSetupStore((s) => s.role);
   const selection = useSetupStore((s) => s.selection);
   const gatedPackages = useSetupStore((s) => s.gatedPackages);
+  const gatedCategories = useSetupStore((s) => s.gatedCategories);
   const isIOS = Platform.OS === "ios";
   const status = useQuotaStore((s) => s.status);
 
@@ -175,7 +176,7 @@ export default function HomeScreen() {
 
   const isSetUp = isIOS
     ? (selection?.categoryCount ?? 0) > 0
-    : gatedPackages.length > 0;
+    : gatedPackages.length + gatedCategories.length > 0;
 
   return (
     <View style={[homeStyles.container, { backgroundColor: background }]}>
@@ -194,7 +195,7 @@ export default function HomeScreen() {
           <Text sneutral semibold>
             {isIOS
               ? describeSelection(selection)
-              : describeGatedPackages(gatedPackages)}
+              : describeGatedPackages(gatedPackages, gatedCategories)}
           </Text>
         ) : null}
       </View>

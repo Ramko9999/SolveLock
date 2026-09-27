@@ -15,6 +15,7 @@ object UsageCounter {
   private const val PREFS = "solvelock-gate"
   private const val KEY_USED = "used-millis"
   private const val KEY_GATED = "gated-packages"
+  private const val KEY_CATEGORIES = "gated-categories"
   private const val KEY_QUOTA = "quota-millis"
 
   private const val DEFAULT_QUOTA_MILLIS = 30L * 60L * 1000L
@@ -24,6 +25,14 @@ object UsageCounter {
 
   @Volatile
   private var gated: Set<String> = emptySet()
+
+  /**
+   * Whole categories the parent ticked. We keep the rule rather than the apps
+   * it matched, so a game the child installs next week is gated the moment it
+   * opens. Expanding at pick time would miss it.
+   */
+  @Volatile
+  private var gatedCategories: Set<Int> = emptySet()
 
   @Volatile
   private var quotaMillis = DEFAULT_QUOTA_MILLIS
@@ -46,6 +55,9 @@ object UsageCounter {
     usedMillis = store.getLong(KEY_USED, 0L)
     quotaMillis = store.getLong(KEY_QUOTA, DEFAULT_QUOTA_MILLIS)
     gated = store.getStringSet(KEY_GATED, emptySet()) ?: emptySet()
+    gatedCategories = (store.getStringSet(KEY_CATEGORIES, emptySet()) ?: emptySet())
+      .mapNotNull { it.toIntOrNull() }
+      .toSet()
     loaded = true
   }
 
@@ -56,6 +68,26 @@ object UsageCounter {
     stopClock()
     gated = packages.toSet()
     prefs(context).edit().putStringSet(KEY_GATED, gated).apply()
+  }
+
+  @Synchronized
+  fun setGatedCategories(context: Context, values: List<Int>) {
+    load(context)
+    stopClock()
+    gatedCategories = values.toSet()
+    prefs(context)
+      .edit()
+      .putStringSet(KEY_CATEGORIES, gatedCategories.map { it.toString() }.toSet())
+      .apply()
+  }
+
+  /** Ticked directly, or covered by a ticked category. */
+  private fun isGated(context: Context, packageName: String): Boolean {
+    if (gated.contains(packageName)) {
+      return true
+    }
+    return gatedCategories.isNotEmpty() &&
+      gatedCategories.contains(InstalledApps.categoryOf(context, packageName))
   }
 
   @Synchronized
@@ -77,7 +109,7 @@ object UsageCounter {
   @Synchronized
   fun onForeground(context: Context, packageName: String?) {
     load(context)
-    val entering = packageName != null && gated.contains(packageName)
+    val entering = packageName != null && isGated(context, packageName)
     if (entering && since > 0L) {
       return
     }
@@ -137,7 +169,7 @@ object UsageCounter {
   @Synchronized
   fun shouldBlock(context: Context, packageName: String?): Boolean {
     load(context)
-    if (packageName == null || !gated.contains(packageName)) {
+    if (packageName == null || !isGated(context, packageName)) {
       return false
     }
     val live = if (since > 0L) System.currentTimeMillis() - since else 0L
@@ -154,7 +186,8 @@ object UsageCounter {
       "quotaMillis" to quotaMillis.toDouble(),
       "over" to (used >= quotaMillis),
       "inGatedApp" to (since > 0L),
-      "gatedPackages" to gated.toList()
+      "gatedPackages" to gated.toList(),
+      "gatedCategories" to gatedCategories.toList()
     )
   }
 }

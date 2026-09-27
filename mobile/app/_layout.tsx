@@ -21,6 +21,7 @@ export default function RootLayout() {
   const armedAt = useSetupStore((s) => s.armedAt);
   const hydrated = useSetupStore((s) => s.hydrated);
   const gatedPackages = useSetupStore((s) => s.gatedPackages);
+  const gatedCategories = useSetupStore((s) => s.gatedCategories);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
 
   useEffect(() => enforcement.onReached(markReached), [markReached]);
@@ -39,8 +40,9 @@ export default function RootLayout() {
       return;
     }
     gate.setGatedPackages(gatedPackages);
+    gate.setGatedCategories(gatedCategories);
     gate.setQuotaMinutes(quotaMinutes);
-  }, [hydrated, gatedPackages, quotaMinutes]);
+  }, [hydrated, gatedPackages, gatedCategories, quotaMinutes]);
 
   // The overlay is the block screen on Android, and the child already tapped
   // Start on it, so open the problems directly. A deep link cannot carry this:

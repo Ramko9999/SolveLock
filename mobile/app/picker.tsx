@@ -71,16 +71,19 @@ const appRowStyles = StyleSheet.create({
 type AppRowProps = {
   app: InstalledApp;
   picked: boolean;
+  /** Covered by a ticked category, so tapping the row alone cannot clear it. */
+  byCategory?: boolean;
   onPress: () => void;
 };
 
-function AppRow({ app, picked, onPress }: AppRowProps) {
+function AppRow({ app, picked, byCategory, onPress }: AppRowProps) {
   const fill = useColor(AppColor.fill);
   const accent = useColor(AppColor.accent);
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={byCategory ? undefined : onPress}
+      disabled={byCategory}
       style={[
         appRowStyles.container,
         { backgroundColor: picked ? accent : fill },
@@ -116,9 +119,68 @@ const androidPickerStyles = StyleSheet.create({
   },
 });
 
+const sectionStyles = StyleSheet.create({
+  label: {
+    paddingTop: "3%",
+    paddingBottom: "1%",
+  },
+});
+
+type CategoryRowProps = {
+  label: string;
+  count: number;
+  picked: boolean;
+  onPress: () => void;
+};
+
+function CategoryRow({ label, count, picked, onPress }: CategoryRowProps) {
+  const fill = useColor(AppColor.fill);
+  const accent = useColor(AppColor.accent);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        appRowStyles.container,
+        { backgroundColor: picked ? accent : fill },
+      ]}
+    >
+      <Text neutral semibold onFilled={picked} style={appRowStyles.label}>
+        {label}
+      </Text>
+      <Text small onFilled={picked} muted={!picked}>
+        {count} {count === 1 ? "app" : "apps"}
+      </Text>
+      <Text large bold onFilled={picked} muted={!picked}>
+        {picked ? "✓" : ""}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** Apps that declare a category, grouped, biggest group first. */
+function groupByCategory(apps: InstalledApp[]) {
+  const groups = new Map<number, { label: string; count: number }>();
+  for (const app of apps) {
+    if (app.category < 0 || !app.categoryLabel) {
+      continue;
+    }
+    const seen = groups.get(app.category);
+    groups.set(app.category, {
+      label: app.categoryLabel,
+      count: (seen?.count ?? 0) + 1,
+    });
+  }
+  return [...groups.entries()]
+    .map(([category, group]) => ({ category, ...group }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
 function AndroidPicker() {
   const gatedPackages = useSetupStore((s) => s.gatedPackages);
+  const gatedCategories = useSetupStore((s) => s.gatedCategories);
   const toggleGatedPackage = useSetupStore((s) => s.toggleGatedPackage);
+  const toggleGatedCategory = useSetupStore((s) => s.toggleGatedCategory);
   const [apps, setApps] = useState<InstalledApp[] | null>(null);
 
   useEffect(() => {
@@ -153,13 +215,38 @@ function AndroidPicker() {
     );
   }
 
+  const groups = groupByCategory(apps);
+
   return (
     <ScrollView contentContainerStyle={androidPickerStyles.list}>
+      {groups.length === 0 ? null : (
+        <>
+          <Text small bold muted style={sectionStyles.label}>
+            CATEGORIES
+          </Text>
+          {groups.map((group) => (
+            <CategoryRow
+              key={group.category}
+              label={group.label}
+              count={group.count}
+              picked={gatedCategories.includes(group.category)}
+              onPress={() => toggleGatedCategory(group.category)}
+            />
+          ))}
+          <Text small bold muted style={sectionStyles.label}>
+            APPS
+          </Text>
+        </>
+      )}
       {apps.map((app) => (
         <AppRow
           key={app.packageName}
           app={app}
-          picked={gatedPackages.includes(app.packageName)}
+          picked={
+            gatedPackages.includes(app.packageName) ||
+            gatedCategories.includes(app.category)
+          }
+          byCategory={gatedCategories.includes(app.category)}
           onPress={() => toggleGatedPackage(app.packageName)}
         />
       ))}
@@ -201,7 +288,9 @@ export default function PickerScreen() {
   const fill = useColor(AppColor.fill);
   const setSelection = useSetupStore((s) => s.setSelection);
   const saved = useSetupStore((s) => s.selection);
-  const gatedCount = useSetupStore((s) => s.gatedPackages.length);
+  const gatedCount = useSetupStore(
+    (s) => s.gatedPackages.length + s.gatedCategories.length,
+  );
   const [iosCount, setIosCount] = useState(
     (saved?.categoryCount ?? 0) + (saved?.applicationCount ?? 0),
   );

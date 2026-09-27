@@ -32,6 +32,11 @@ type SetupState = {
   selection: Selection | null;
   /** Android only. iOS never tells us a bundle id, so it uses `selection`. */
   gatedPackages: string[];
+  /**
+   * Whole categories, stored as a rule rather than the apps it matched today.
+   * A game installed next week is then gated without the parent touching it.
+   */
+  gatedCategories: number[];
   quotaMinutes: number;
   /** When we last called startMonitoring. Wall-clock, not usage -- iOS never
    *  reports a running total, so this is elapsed time, not quota consumed. */
@@ -41,6 +46,7 @@ type SetupState = {
   countCorrect: () => void;
   setSelection: (selection: Selection) => void;
   toggleGatedPackage: (packageName: string) => void;
+  toggleGatedCategory: (category: number) => void;
   setQuotaMinutes: (minutes: number) => void;
   setArmedAt: (armedAt: number | null) => void;
   clearSelection: () => void;
@@ -54,6 +60,7 @@ export const useSetupStore = create<SetupState>()(
       solvedCorrect: 0,
       selection: null,
       gatedPackages: [],
+      gatedCategories: [],
       quotaMinutes: DEFAULT_QUOTA_MINUTES,
       armedAt: null,
       hydrated: false,
@@ -67,9 +74,16 @@ export const useSetupStore = create<SetupState>()(
             ? state.gatedPackages.filter((name) => name !== packageName)
             : [...state.gatedPackages, packageName],
         })),
+      toggleGatedCategory: (category) =>
+        set((state) => ({
+          gatedCategories: state.gatedCategories.includes(category)
+            ? state.gatedCategories.filter((one) => one !== category)
+            : [...state.gatedCategories, category],
+        })),
       setQuotaMinutes: (quotaMinutes) => set({ quotaMinutes }),
       setArmedAt: (armedAt) => set({ armedAt }),
-      clearSelection: () => set({ selection: null, gatedPackages: [] }),
+      clearSelection: () =>
+        set({ selection: null, gatedPackages: [], gatedCategories: [] }),
       setHydrated: () => set({ hydrated: true }),
     }),
     {
@@ -80,6 +94,7 @@ export const useSetupStore = create<SetupState>()(
         solvedCorrect: state.solvedCorrect,
         selection: state.selection,
         gatedPackages: state.gatedPackages,
+        gatedCategories: state.gatedCategories,
         quotaMinutes: state.quotaMinutes,
         armedAt: state.armedAt,
       }),
@@ -90,11 +105,22 @@ export const useSetupStore = create<SetupState>()(
   ),
 );
 
-export function describeGatedPackages(gatedPackages: string[]) {
-  if (gatedPackages.length === 0) {
-    return "Nothing selected yet";
+export function describeGatedPackages(
+  gatedPackages: string[],
+  gatedCategories: number[] = [],
+) {
+  const parts: string[] = [];
+  if (gatedCategories.length > 0) {
+    parts.push(
+      `${gatedCategories.length} ${gatedCategories.length === 1 ? "category" : "categories"}`,
+    );
   }
-  return `${gatedPackages.length} ${gatedPackages.length === 1 ? "app" : "apps"}`;
+  if (gatedPackages.length > 0) {
+    parts.push(
+      `${gatedPackages.length} ${gatedPackages.length === 1 ? "app" : "apps"}`,
+    );
+  }
+  return parts.length > 0 ? parts.join(" · ") : "Nothing selected yet";
 }
 
 export function describeSelection(selection: Selection | null) {

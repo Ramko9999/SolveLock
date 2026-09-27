@@ -104,6 +104,7 @@ export default function SetupScreen() {
   const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
   const gatedPackages = useSetupStore((s) => s.gatedPackages);
+  const gatedCategories = useSetupStore((s) => s.gatedCategories);
   const [permissionsLeft, setPermissionsLeft] = useState<number | null>(null);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setArmedAt = useSetupStore((s) => s.setArmedAt);
@@ -219,12 +220,17 @@ export default function SetupScreen() {
           value={
             isIOS
               ? describeSelection(selection)
-              : describeGatedPackages(gatedPackages)
+              : describeGatedPackages(gatedPackages, gatedCategories)
           }
           onPress={approved ? () => router.push("/picker") : undefined}
         />
         <SettingRow label="Check every" value={minutes(quotaMinutes)} />
         <SettingRow label="Problems per check" value="3" />
+        <SettingRow
+          label="Diagnostics"
+          value="Counters and test buttons"
+          onPress={() => router.push("/settings")}
+        />
 
         <View style={setupStyles.spacer} />
 

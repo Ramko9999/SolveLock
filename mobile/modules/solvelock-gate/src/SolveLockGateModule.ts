@@ -11,6 +11,7 @@ declare class SolveLockGateModule extends NativeModule<SolveLockGateModuleEvents
   getInstalledApps(): Promise<InstalledApp[]>;
   getUsage(): Usage | null;
   setGatedPackages(packages: string[]): boolean;
+  setGatedCategories(categories: number[]): boolean;
   setQuotaMinutes(minutes: number): boolean;
   resetUsage(): boolean;
   getPermissionStatus(): Record<string, boolean>;
