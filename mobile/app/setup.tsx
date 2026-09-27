@@ -160,7 +160,8 @@ export default function SetupScreen() {
   const finish = () => {
     setArmedAt(Date.now());
     startQuota(quotaMinutes, selection?.token ?? null);
-    router.back();
+    // replace, not back: onboarding arrives here with nothing behind it.
+    router.replace("/");
   };
 
   const authorizationValue =

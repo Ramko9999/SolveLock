@@ -14,12 +14,21 @@ export type Selection = {
   token: string | null;
 };
 
+/**
+ * Whose phone this is. The parent configures either way; `child` means they
+ * handed it back, so the screens must never speak to the parent from then on.
+ */
+export type Role = "self" | "child";
+
 export const DEFAULT_QUOTA_MINUTES = 30;
 
 /** Short values exist so a device test doesn't cost 30 minutes of waiting. */
 export const QUOTA_CHOICES = [1, 2, 5, 30] as const;
 
 type SetupState = {
+  role: Role | null;
+  /** Correct answers, ever. The child's number, not the parent's. */
+  solvedCorrect: number;
   selection: Selection | null;
   /** Android only. iOS never tells us a bundle id, so it uses `selection`. */
   gatedPackages: string[];
@@ -28,6 +37,8 @@ type SetupState = {
    *  reports a running total, so this is elapsed time, not quota consumed. */
   armedAt: number | null;
   hydrated: boolean;
+  setRole: (role: Role) => void;
+  countCorrect: () => void;
   setSelection: (selection: Selection) => void;
   toggleGatedPackage: (packageName: string) => void;
   setQuotaMinutes: (minutes: number) => void;
@@ -39,11 +50,16 @@ type SetupState = {
 export const useSetupStore = create<SetupState>()(
   persist(
     (set) => ({
+      role: null,
+      solvedCorrect: 0,
       selection: null,
       gatedPackages: [],
       quotaMinutes: DEFAULT_QUOTA_MINUTES,
       armedAt: null,
       hydrated: false,
+      setRole: (role) => set({ role }),
+      countCorrect: () =>
+        set((state) => ({ solvedCorrect: state.solvedCorrect + 1 })),
       setSelection: (selection) => set({ selection }),
       toggleGatedPackage: (packageName) =>
         set((state) => ({
@@ -60,6 +76,8 @@ export const useSetupStore = create<SetupState>()(
       name: "solvelock-setup",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
+        role: state.role,
+        solvedCorrect: state.solvedCorrect,
         selection: state.selection,
         gatedPackages: state.gatedPackages,
         quotaMinutes: state.quotaMinutes,

@@ -231,6 +231,7 @@ export default function SolveScreen() {
   const token = useSetupStore((s) => s.selection?.token ?? null);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setArmedAt = useSetupStore((s) => s.setArmedAt);
+  const countCorrect = useSetupStore((s) => s.countCorrect);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -253,6 +254,9 @@ export default function SolveScreen() {
       setSelected(value);
 
       const isRight = value === problem.answer;
+      if (isRight) {
+        countCorrect();
+      }
       Haptics.impactAsync(
         isRight
           ? Haptics.ImpactFeedbackStyle.Light
@@ -294,6 +298,7 @@ export default function SolveScreen() {
       token,
       quotaMinutes,
       setArmedAt,
+      countCorrect,
     ],
   );
 
