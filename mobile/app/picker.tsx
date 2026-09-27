@@ -53,15 +53,16 @@ const appRowStyles = StyleSheet.create({
     ...StyleUtils.flexRow(),
     alignItems: "center",
     width: "100%",
-    paddingVertical: "3.5%",
-    paddingHorizontal: "4%",
-    borderRadius: Radius.xl,
-    gap: 14,
+    paddingVertical: "3%",
+    paddingLeft: "12%",
+    paddingRight: "5%",
+    borderRadius: Radius.lg,
+    gap: 12,
   },
   icon: {
-    width: "12%",
+    width: "10%",
     aspectRatio: 1,
-    borderRadius: Radius.md,
+    borderRadius: Radius.sm,
   },
   label: {
     flex: 1,
@@ -71,22 +72,23 @@ const appRowStyles = StyleSheet.create({
 type AppRowProps = {
   app: InstalledApp;
   picked: boolean;
-  /** Covered by a ticked category, so tapping the row alone cannot clear it. */
-  byCategory?: boolean;
+  /** Covered by its category, so the row reports rather than offers. */
+  byCategory: boolean;
   onPress: () => void;
 };
 
 function AppRow({ app, picked, byCategory, onPress }: AppRowProps) {
   const fill = useColor(AppColor.fill);
   const accent = useColor(AppColor.accent);
+  const muted = useColor(AppColor.muted);
 
   return (
     <Pressable
-      onPress={byCategory ? undefined : onPress}
+      onPress={onPress}
       disabled={byCategory}
       style={[
         appRowStyles.container,
-        { backgroundColor: picked ? accent : fill },
+        { backgroundColor: !byCategory && picked ? fill : "transparent" },
       ]}
     >
       {app.icon ? (
@@ -94,12 +96,106 @@ function AppRow({ app, picked, byCategory, onPress }: AppRowProps) {
       ) : (
         <View style={appRowStyles.icon} />
       )}
-      <Text neutral semibold onFilled={picked} style={appRowStyles.label}>
+      <Text small semibold muted={byCategory} style={appRowStyles.label}>
         {app.label}
       </Text>
-      <Text large bold onFilled={picked} muted={!picked}>
-        {picked ? "✓" : ""}
+      <Text neutral bold style={{ color: picked ? accent : muted }}>
+        {picked ? "\u2713" : ""}
       </Text>
+    </Pressable>
+  );
+}
+
+const groupRowStyles = StyleSheet.create({
+  container: {
+    ...StyleUtils.flexRow(),
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: "4%",
+    paddingLeft: "4%",
+    paddingRight: "2%",
+    borderRadius: Radius.xl,
+    gap: 10,
+  },
+  chevron: {
+    width: "6%",
+  },
+  label: {
+    flex: 1,
+  },
+  tick: {
+    ...StyleUtils.flexRowCenterAll(),
+    paddingVertical: "3%",
+    paddingHorizontal: "5%",
+  },
+});
+
+type Group = {
+  category: number;
+  label: string;
+  apps: InstalledApp[];
+};
+
+type GroupRowProps = {
+  group: Group;
+  open: boolean;
+  picked: boolean;
+  chosen: number;
+  onToggleOpen: () => void;
+  onTogglePicked: () => void;
+};
+
+function GroupRow({
+  group,
+  open,
+  picked,
+  chosen,
+  onToggleOpen,
+  onTogglePicked,
+}: GroupRowProps) {
+  const fill = useColor(AppColor.fill);
+  const accent = useColor(AppColor.accent);
+  const muted = useColor(AppColor.muted);
+
+  return (
+    <Pressable
+      onPress={onToggleOpen}
+      style={[
+        groupRowStyles.container,
+        { backgroundColor: picked ? accent : fill },
+      ]}
+    >
+      <Text neutral bold onFilled={picked} style={groupRowStyles.chevron}>
+        {open ? "\u25be" : "\u25b8"}
+      </Text>
+      <Text neutral semibold onFilled={picked} style={groupRowStyles.label}>
+        {group.label}
+      </Text>
+      <Text
+        small
+        onFilled={picked}
+        style={picked ? undefined : { color: muted }}
+      >
+        {picked
+          ? "all"
+          : chosen > 0
+            ? `${chosen} of ${group.apps.length}`
+            : `${group.apps.length}`}
+      </Text>
+      <Pressable
+        onPress={onTogglePicked}
+        hitSlop={8}
+        style={groupRowStyles.tick}
+      >
+        <Text
+          large
+          bold
+          onFilled={picked}
+          style={picked ? undefined : { color: accent }}
+        >
+          {picked ? "\u2713" : "\u25cb"}
+        </Text>
+      </Pressable>
     </Pressable>
   );
 }
@@ -109,7 +205,7 @@ const androidPickerStyles = StyleSheet.create({
     ...StyleUtils.flexColumn(),
     paddingHorizontal: "6%",
     paddingBottom: "4%",
-    gap: 8,
+    gap: 6,
   },
   message: {
     ...StyleUtils.flexColumnCenterAll(8),
@@ -119,61 +215,41 @@ const androidPickerStyles = StyleSheet.create({
   },
 });
 
-const sectionStyles = StyleSheet.create({
-  label: {
-    paddingTop: "3%",
-    paddingBottom: "1%",
-  },
-});
+const OTHER = -1;
 
-type CategoryRowProps = {
-  label: string;
-  count: number;
-  picked: boolean;
-  onPress: () => void;
-};
-
-function CategoryRow({ label, count, picked, onPress }: CategoryRowProps) {
-  const fill = useColor(AppColor.fill);
-  const accent = useColor(AppColor.accent);
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        appRowStyles.container,
-        { backgroundColor: picked ? accent : fill },
-      ]}
-    >
-      <Text neutral semibold onFilled={picked} style={appRowStyles.label}>
-        {label}
-      </Text>
-      <Text small onFilled={picked} muted={!picked}>
-        {count} {count === 1 ? "app" : "apps"}
-      </Text>
-      <Text large bold onFilled={picked} muted={!picked}>
-        {picked ? "✓" : ""}
-      </Text>
-    </Pressable>
-  );
-}
-
-/** Apps that declare a category, grouped, biggest group first. */
-function groupByCategory(apps: InstalledApp[]) {
-  const groups = new Map<number, { label: string; count: number }>();
+/**
+ * Every app lives in exactly one group. Games first because that is what a
+ * parent came for, then the biggest groups, and the apps that declare no
+ * category last.
+ */
+function groupByCategory(apps: InstalledApp[]): Group[] {
+  const groups = new Map<number, Group>();
   for (const app of apps) {
-    if (app.category < 0 || !app.categoryLabel) {
-      continue;
+    const category = app.category < 0 ? OTHER : app.category;
+    const label =
+      category === OTHER ? "Everything else" : (app.categoryLabel ?? "Other");
+    const seen = groups.get(category);
+    if (seen) {
+      seen.apps.push(app);
+    } else {
+      groups.set(category, { category, label, apps: [app] });
     }
-    const seen = groups.get(app.category);
-    groups.set(app.category, {
-      label: app.categoryLabel,
-      count: (seen?.count ?? 0) + 1,
-    });
   }
-  return [...groups.entries()]
-    .map(([category, group]) => ({ category, ...group }))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  return [...groups.values()].sort((a, b) => {
+    if (a.category === OTHER) {
+      return 1;
+    }
+    if (b.category === OTHER) {
+      return -1;
+    }
+    if (a.category === 0) {
+      return -1;
+    }
+    if (b.category === 0) {
+      return 1;
+    }
+    return b.apps.length - a.apps.length || a.label.localeCompare(b.label);
+  });
 }
 
 function AndroidPicker() {
@@ -182,6 +258,7 @@ function AndroidPicker() {
   const toggleGatedPackage = useSetupStore((s) => s.toggleGatedPackage);
   const toggleGatedCategory = useSetupStore((s) => s.toggleGatedCategory);
   const [apps, setApps] = useState<InstalledApp[] | null>(null);
+  const [open, setOpen] = useState<number[]>([]);
 
   useEffect(() => {
     const native = gate;
@@ -215,41 +292,50 @@ function AndroidPicker() {
     );
   }
 
-  const groups = groupByCategory(apps);
-
   return (
     <ScrollView contentContainerStyle={androidPickerStyles.list}>
-      {groups.length === 0 ? null : (
-        <>
-          <Text small bold muted style={sectionStyles.label}>
-            CATEGORIES
-          </Text>
-          {groups.map((group) => (
-            <CategoryRow
-              key={group.category}
-              label={group.label}
-              count={group.count}
-              picked={gatedCategories.includes(group.category)}
-              onPress={() => toggleGatedCategory(group.category)}
+      {groupByCategory(apps).map((group) => {
+        const whole =
+          group.category !== OTHER && gatedCategories.includes(group.category);
+        const chosen = group.apps.filter((app) =>
+          gatedPackages.includes(app.packageName),
+        ).length;
+        const isOpen = open.includes(group.category);
+
+        return (
+          <View key={group.category}>
+            <GroupRow
+              group={group}
+              open={isOpen}
+              picked={whole}
+              chosen={chosen}
+              onToggleOpen={() =>
+                setOpen((current) =>
+                  current.includes(group.category)
+                    ? current.filter((one) => one !== group.category)
+                    : [...current, group.category],
+                )
+              }
+              onTogglePicked={() => {
+                if (group.category !== OTHER) {
+                  toggleGatedCategory(group.category);
+                }
+              }}
             />
-          ))}
-          <Text small bold muted style={sectionStyles.label}>
-            APPS
-          </Text>
-        </>
-      )}
-      {apps.map((app) => (
-        <AppRow
-          key={app.packageName}
-          app={app}
-          picked={
-            gatedPackages.includes(app.packageName) ||
-            gatedCategories.includes(app.category)
-          }
-          byCategory={gatedCategories.includes(app.category)}
-          onPress={() => toggleGatedPackage(app.packageName)}
-        />
-      ))}
+            {isOpen
+              ? group.apps.map((app) => (
+                  <AppRow
+                    key={app.packageName}
+                    app={app}
+                    picked={whole || gatedPackages.includes(app.packageName)}
+                    byCategory={whole}
+                    onPress={() => toggleGatedPackage(app.packageName)}
+                  />
+                ))
+              : null}
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -307,7 +393,7 @@ export default function PickerScreen() {
         </Text>
         <Text small muted>
           {isAndroid
-            ? "Tap an app to gate it. Tap again to let it through."
+            ? "Tick a whole category, or open it and pick apps one by one."
             : "A category also covers apps installed later."}
         </Text>
       </View>
