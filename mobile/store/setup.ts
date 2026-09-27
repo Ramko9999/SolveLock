@@ -22,8 +22,15 @@ export type Role = "self" | "child";
 
 export const DEFAULT_QUOTA_MINUTES = 30;
 
-/** Short values exist so a device test doesn't cost 30 minutes of waiting. */
-export const QUOTA_CHOICES = [1, 2, 5, 30] as const;
+/**
+ * What a parent can choose: ten to forty-five minutes, in fives. Shorter than
+ * ten is not a quota, it is an interruption; longer than forty-five and the
+ * check stops being a rhythm.
+ */
+export const QUOTA_MINUTES = [10, 15, 20, 25, 30, 35, 40, 45];
+
+/** Diagnostics only. A device test must not cost ten minutes of waiting. */
+export const TEST_QUOTA_CHOICES = [1, 2, 5, 30] as const;
 
 export const DEFAULT_PROBLEMS_PER_CHECK = 3;
 

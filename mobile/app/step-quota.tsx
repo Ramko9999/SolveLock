@@ -1,12 +1,24 @@
 import { useRouter } from "expo-router";
-import { ChoiceList } from "@/components/util/choice-list";
+import { useEffect } from "react";
+import { DurationWheel } from "@/components/util/duration-wheel";
 import { WizardStep } from "@/components/util/wizard-step";
-import { QUOTA_CHOICES, useSetupStore } from "@/store/setup";
+import {
+  DEFAULT_QUOTA_MINUTES,
+  QUOTA_MINUTES,
+  useSetupStore,
+} from "@/store/setup";
 
 export default function StepQuotaScreen() {
   const router = useRouter();
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setQuotaMinutes = useSetupStore((s) => s.setQuotaMinutes);
+
+  // Diagnostics can leave a test value the wheel cannot show.
+  useEffect(() => {
+    if (!QUOTA_MINUTES.includes(quotaMinutes)) {
+      setQuotaMinutes(DEFAULT_QUOTA_MINUTES);
+    }
+  }, [quotaMinutes, setQuotaMinutes]);
 
   return (
     <WizardStep
@@ -18,14 +30,11 @@ export default function StepQuotaScreen() {
       nextEnabled
       onNext={() => router.push("/step-problems")}
     >
-      <ChoiceList
-        choices={QUOTA_CHOICES.map((minutes) => ({
-          value: minutes,
-          label: `${minutes} ${minutes === 1 ? "minute" : "minutes"}`,
-          detail: minutes < 10 ? "for testing" : undefined,
-        }))}
-        selected={quotaMinutes}
-        onSelect={setQuotaMinutes}
+      <DurationWheel
+        values={QUOTA_MINUTES}
+        value={quotaMinutes}
+        unit="minutes"
+        onChange={setQuotaMinutes}
       />
     </WizardStep>
   );
