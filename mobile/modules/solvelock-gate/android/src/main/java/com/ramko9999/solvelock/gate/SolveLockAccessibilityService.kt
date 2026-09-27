@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 
@@ -14,12 +16,47 @@ import android.view.accessibility.AccessibilityEvent
  * instant the foreground window changes.
  */
 class SolveLockAccessibilityService : AccessibilityService() {
+  /** How often we bank progress to disk while the child is playing. */
+  private val flushMillis = 10_000L
+
+  private val handler = Handler(Looper.getMainLooper())
+
+  /**
+   * Window events alone cannot enforce a quota. A game that stays on one
+   * screen fires nothing, so the child runs past it; a game that changes
+   * screens fires at a random moment, so the cover lands mid-match. This runs
+   * on its own clock instead, and lands on the quota exactly.
+   */
+  private val tick = object : Runnable {
+    override fun run() {
+      val service = this@SolveLockAccessibilityService
+      UsageCounter.flush(service)
+      val playing = GateState.foregroundPackage
+      if (playing != null && UsageCounter.shouldBlock(service, playing)) {
+        cover(playing)
+        return
+      }
+      schedule()
+    }
+  }
+
+  /** Wake at the quota, or at the next flush, whichever comes first. */
+  private fun schedule() {
+    handler.removeCallbacks(tick)
+    if (!UsageCounter.inSession()) {
+      return
+    }
+    val remaining = UsageCounter.remaining(this)
+    handler.postDelayed(tick, minOf(flushMillis, maxOf(remaining, 250L)))
+  }
+
   /** A phone in a pocket is not a child playing, so stop the clock. */
   private val screenOff = object : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
       GateState.report(null)
       UsageCounter.onForeground(this@SolveLockAccessibilityService, null)
       BlockOverlay.hide()
+      handler.removeCallbacks(tick)
     }
   }
 
@@ -29,6 +66,7 @@ class SolveLockAccessibilityService : AccessibilityService() {
   }
 
   override fun onUnbind(intent: Intent?): Boolean {
+    handler.removeCallbacks(tick)
     UsageCounter.onForeground(this, null)
     BlockOverlay.hide()
     try {
@@ -64,6 +102,7 @@ class SolveLockAccessibilityService : AccessibilityService() {
       // Home, the launcher, or any app we do not gate. Get out of the way.
       BlockOverlay.hide()
     }
+    schedule()
   }
 
   private fun cover(packageName: String) {

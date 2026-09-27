@@ -146,6 +146,26 @@ Two things cost time and will cost it again:
 The count is usage, not wall-clock. Unlike iOS, we can show this number to the
 child, because we own it.
 
+**Window events alone cannot enforce a quota.** They fire when a window
+changes, which is not when the quota runs out. A game that stays on one screen
+fires nothing, so the child runs past the quota; a game that changes screens
+fires at a random moment, so the cover lands mid-match. Those are opposite
+failures and the current design produced both, decided by how the game happens
+to manage its windows.
+
+So the service keeps its own clock. It wakes at the quota, or every ten seconds
+to bank progress to disk, whichever is sooner. Measured: on a 60,000ms quota,
+the cover landed at 60,057ms with the app untouched.
+
+The ten-second flush also closes a hole. The minutes of a session in progress
+used to live only in memory, so a reboot or a process kill handed them back.
+Now a crash costs ten seconds.
+
+**This can interrupt a match**, which
+[kid-experience.md](kid-experience.md) principle 1 says never to do. Landing on
+the quota exactly is the precise half of the problem; choosing a *kind* moment
+to land is still open, and is what `warningTime` gives us on iOS.
+
 **Done, 2026-09-26.** Chrome was in front from 18:12:51 to 18:13:28, and the
 count read 0:37 of 2:00. It did not move in the next 20 seconds outside Chrome.
 

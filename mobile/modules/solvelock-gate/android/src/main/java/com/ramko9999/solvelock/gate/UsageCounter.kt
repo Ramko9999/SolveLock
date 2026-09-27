@@ -102,6 +102,32 @@ object UsageCounter {
     prefs(context).edit().putLong(KEY_USED, usedMillis).apply()
   }
 
+  fun inSession(): Boolean = since > 0L
+
+  /**
+   * Banks the minutes so far without ending the session, so the running total
+   * reaches disk. A crash then costs seconds, not the whole session.
+   */
+  @Synchronized
+  fun flush(context: Context) {
+    load(context)
+    if (since == 0L) {
+      return
+    }
+    val now = System.currentTimeMillis()
+    usedMillis += now - since
+    since = now
+    save(context)
+  }
+
+  /** Milliseconds of quota left, counting the session in progress. */
+  @Synchronized
+  fun remaining(context: Context): Long {
+    load(context)
+    val live = if (since > 0L) System.currentTimeMillis() - since else 0L
+    return Math.max(0L, quotaMillis - (usedMillis + live))
+  }
+
   @Synchronized
   fun quotaMinutes(context: Context): Int {
     load(context)
