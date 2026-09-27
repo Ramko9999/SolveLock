@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -232,11 +232,21 @@ export default function SolveScreen() {
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setArmedAt = useSetupStore((s) => s.setArmedAt);
   const countCorrect = useSetupStore((s) => s.countCorrect);
+  const problemsPerCheck = useSetupStore((s) => s.problemsPerCheck);
+  // The bank is smaller than the largest run the parent can ask for, so wrap.
+  const run = useMemo(
+    () =>
+      Array.from(
+        { length: problemsPerCheck },
+        (_, slot) => PROBLEMS[slot % PROBLEMS.length],
+      ),
+    [problemsPerCheck],
+  );
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const problem = PROBLEMS[index];
+  const problem = run[index];
 
   useEffect(() => {
     return () => {
@@ -265,7 +275,7 @@ export default function SolveScreen() {
 
       advance.current = setTimeout(
         () => {
-          if (index + 1 >= PROBLEMS.length) {
+          if (index + 1 >= run.length) {
             // Android hands the child straight back to the game. iOS cannot,
             // so it drops them on our home screen and they find it themselves.
             if (gate) {
@@ -299,6 +309,7 @@ export default function SolveScreen() {
       quotaMinutes,
       setArmedAt,
       countCorrect,
+      run,
     ],
   );
 
@@ -310,7 +321,7 @@ export default function SolveScreen() {
       ]}
     >
       <View style={solveStyles.content}>
-        <ProgressBar ratio={(index + 1) / PROBLEMS.length} />
+        <ProgressBar ratio={(index + 1) / run.length} />
         <View style={solveStyles.question}>
           <Text huge bold style={solveStyles.questionText}>
             {problem.question}

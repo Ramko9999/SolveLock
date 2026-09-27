@@ -73,6 +73,11 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="role" />
           <Stack.Screen name="handoff" />
+          <Stack.Screen name="step-permissions" />
+          <Stack.Screen name="step-apps" />
+          <Stack.Screen name="step-quota" />
+          <Stack.Screen name="step-problems" />
+          <Stack.Screen name="step-confirm" />
           <Stack.Screen name="setup" />
           <Stack.Screen name="settings" />
           <Stack.Screen name="permissions" />

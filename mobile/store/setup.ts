@@ -25,6 +25,10 @@ export const DEFAULT_QUOTA_MINUTES = 30;
 /** Short values exist so a device test doesn't cost 30 minutes of waiting. */
 export const QUOTA_CHOICES = [1, 2, 5, 30] as const;
 
+export const DEFAULT_PROBLEMS_PER_CHECK = 3;
+
+export const PROBLEM_CHOICES = [1, 3, 5] as const;
+
 type SetupState = {
   role: Role | null;
   /** Correct answers, ever. The child's number, not the parent's. */
@@ -38,6 +42,7 @@ type SetupState = {
    */
   gatedCategories: number[];
   quotaMinutes: number;
+  problemsPerCheck: number;
   /** When we last called startMonitoring. Wall-clock, not usage -- iOS never
    *  reports a running total, so this is elapsed time, not quota consumed. */
   armedAt: number | null;
@@ -48,6 +53,7 @@ type SetupState = {
   toggleGatedPackage: (packageName: string) => void;
   toggleGatedCategory: (category: number) => void;
   setQuotaMinutes: (minutes: number) => void;
+  setProblemsPerCheck: (count: number) => void;
   setArmedAt: (armedAt: number | null) => void;
   clearSelection: () => void;
   setHydrated: () => void;
@@ -62,6 +68,7 @@ export const useSetupStore = create<SetupState>()(
       gatedPackages: [],
       gatedCategories: [],
       quotaMinutes: DEFAULT_QUOTA_MINUTES,
+      problemsPerCheck: DEFAULT_PROBLEMS_PER_CHECK,
       armedAt: null,
       hydrated: false,
       setRole: (role) => set({ role }),
@@ -81,6 +88,7 @@ export const useSetupStore = create<SetupState>()(
             : [...state.gatedCategories, category],
         })),
       setQuotaMinutes: (quotaMinutes) => set({ quotaMinutes }),
+      setProblemsPerCheck: (problemsPerCheck) => set({ problemsPerCheck }),
       setArmedAt: (armedAt) => set({ armedAt }),
       clearSelection: () =>
         set({ selection: null, gatedPackages: [], gatedCategories: [] }),
@@ -96,6 +104,7 @@ export const useSetupStore = create<SetupState>()(
         gatedPackages: state.gatedPackages,
         gatedCategories: state.gatedCategories,
         quotaMinutes: state.quotaMinutes,
+        problemsPerCheck: state.problemsPerCheck,
         armedAt: state.armedAt,
       }),
       onRehydrateStorage: () => (state) => {

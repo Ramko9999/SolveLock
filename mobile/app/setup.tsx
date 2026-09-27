@@ -210,11 +210,15 @@ export default function SetupScreen() {
             onPress={approved ? undefined : authorize}
           />
         ) : null}
-        <SettingRow
-          label="Notifications"
-          value={notifications ? "Allowed" : "Tap to allow"}
-          onPress={notifications ? undefined : allowNotifications}
-        />
+        {/* iOS only: the shield cannot open us, so it posts a notification the
+            child taps. Nothing on the Android path posts anything. */}
+        {isIOS ? (
+          <SettingRow
+            label="Notifications"
+            value={notifications ? "Allowed" : "Tap to allow"}
+            onPress={notifications ? undefined : allowNotifications}
+          />
+        ) : null}
         <SettingRow
           label="Gated apps"
           value={

@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet } from "react-native";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
@@ -58,7 +58,11 @@ export default function HandoffScreen() {
         <View style={handoffStyles.spacer} />
 
         <Pressable
-          onPress={() => router.replace("/setup")}
+          onPress={() =>
+            router.replace(
+              Platform.OS === "android" ? "/step-permissions" : "/setup",
+            )
+          }
           style={[handoffStyles.next, { backgroundColor: accent }]}
         >
           <Text large extrabold onFilled>

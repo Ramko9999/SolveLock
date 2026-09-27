@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet } from "react-native";
+import { Platform, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { type Role, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
@@ -69,7 +69,13 @@ export default function RoleScreen() {
 
   const choose = (role: Role) => {
     setRole(role);
-    router.replace(role === "child" ? "/handoff" : "/setup");
+    router.replace(
+      role === "child"
+        ? "/handoff"
+        : Platform.OS === "android"
+          ? "/step-permissions"
+          : "/setup",
+    );
   };
 
   return (
