@@ -23,6 +23,7 @@ export default function RootLayout() {
   const gatedPackages = useSetupStore((s) => s.gatedPackages);
   const gatedCategories = useSetupStore((s) => s.gatedCategories);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
+  const problemsPerCheck = useSetupStore((s) => s.problemsPerCheck);
 
   useEffect(() => enforcement.onReached(markReached), [markReached]);
 
@@ -42,19 +43,32 @@ export default function RootLayout() {
     gate.setGatedPackages(gatedPackages);
     gate.setGatedCategories(gatedCategories);
     gate.setQuotaMinutes(quotaMinutes);
-  }, [hydrated, gatedPackages, gatedCategories, quotaMinutes]);
+    gate.setProblemsPerCheck(problemsPerCheck);
+  }, [
+    hydrated,
+    gatedPackages,
+    gatedCategories,
+    quotaMinutes,
+    problemsPerCheck,
+  ]);
 
-  // Coming forward without remounting -- the app was already alive behind the
-  // cover. A cold start is handled in app/index.tsx instead, during render, so
-  // the home screen never paints first.
+  // Coming forward when nothing remounts -- the app was already alive behind
+  // the cover. A cold start is handled in app/index.tsx during render instead,
+  // so the home screen never paints first.
   useEffect(() => {
     const native = gate;
     if (!native) {
       return;
     }
-    const state = AppState.addEventListener("change", (next) => {
-      if (next === "active" && native.getBlockedPackage()) {
+    const open = () => {
+      if (native.getBlockedPackage()) {
         router.replace("/solve");
+      }
+    };
+    open();
+    const state = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
+        open();
       }
     });
     return () => state.remove();

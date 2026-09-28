@@ -17,6 +17,7 @@ object UsageCounter {
   private const val KEY_GATED = "gated-packages"
   private const val KEY_CATEGORIES = "gated-categories"
   private const val KEY_QUOTA = "quota-millis"
+  private const val KEY_PROBLEMS = "problems-per-check"
 
   private const val DEFAULT_QUOTA_MILLIS = 30L * 60L * 1000L
 
@@ -37,6 +38,10 @@ object UsageCounter {
   @Volatile
   private var quotaMillis = DEFAULT_QUOTA_MILLIS
 
+  /** Only so the cover can promise the number the child will actually face. */
+  @Volatile
+  private var problemsPerCheck = 3
+
   /** When the child entered the gated app they are in now. 0 means none. */
   @Volatile
   private var since = 0L
@@ -54,6 +59,7 @@ object UsageCounter {
     val store = prefs(context)
     usedMillis = store.getLong(KEY_USED, 0L)
     quotaMillis = store.getLong(KEY_QUOTA, DEFAULT_QUOTA_MILLIS)
+    problemsPerCheck = store.getInt(KEY_PROBLEMS, 3)
     gated = store.getStringSet(KEY_GATED, emptySet()) ?: emptySet()
     gatedCategories = (store.getStringSet(KEY_CATEGORIES, emptySet()) ?: emptySet())
       .mapNotNull { it.toIntOrNull() }
@@ -68,6 +74,19 @@ object UsageCounter {
     stopClock()
     gated = packages.toSet()
     prefs(context).edit().putStringSet(KEY_GATED, gated).apply()
+  }
+
+  @Synchronized
+  fun setProblemsPerCheck(context: Context, count: Int) {
+    load(context)
+    problemsPerCheck = Math.max(1, count)
+    prefs(context).edit().putInt(KEY_PROBLEMS, problemsPerCheck).apply()
+  }
+
+  @Synchronized
+  fun problemsPerCheck(context: Context): Int {
+    load(context)
+    return problemsPerCheck
   }
 
   @Synchronized

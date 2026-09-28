@@ -34,7 +34,7 @@ object BlockOverlay {
 
   fun isShowing(): Boolean = view != null
 
-  fun show(context: Context, quotaMinutes: Int, onStart: () -> Unit) {
+  fun show(context: Context, quotaMinutes: Int, problems: Int, onStart: () -> Unit) {
     if (view != null) {
       return
     }
@@ -59,7 +59,7 @@ object BlockOverlay {
       PixelFormat.OPAQUE
     )
 
-    val content = build(context, quotaMinutes, onStart)
+    val content = build(context, quotaMinutes, problems, onStart)
     return try {
       manager.addView(content, params)
       view = content
@@ -89,7 +89,12 @@ object BlockOverlay {
     TypedValue.COMPLEX_UNIT_DIP, value, context.resources.displayMetrics
   ).toInt()
 
-  private fun build(context: Context, quotaMinutes: Int, onStart: () -> Unit): View {
+  private fun build(
+    context: Context,
+    quotaMinutes: Int,
+    problems: Int,
+    onStart: () -> Unit
+  ): View {
     val dark = isDark(context)
     val pageColor = Color.parseColor(if (dark) "#111111" else "#FFFFFF")
     val primary = Color.parseColor(if (dark) "#FFFFFF" else "#000000")
@@ -111,7 +116,7 @@ object BlockOverlay {
     })
 
     root.addView(TextView(context).apply {
-      text = "Solve 3 and you're back in."
+      text = "Solve $problems and you're back in."
       setTextColor(muted)
       setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
     })

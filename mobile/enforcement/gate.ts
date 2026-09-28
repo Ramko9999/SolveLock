@@ -12,6 +12,8 @@ type Gate = {
   setGatedPackages(packages: string[]): boolean;
   setGatedCategories(categories: number[]): boolean;
   setQuotaMinutes(minutes: number): boolean;
+  setProblemsPerCheck(count: number): boolean;
+  dismissCover(): boolean;
   resetUsage(): boolean;
   getPermissionStatus(): Record<string, boolean>;
   openPermission(id: string): boolean;

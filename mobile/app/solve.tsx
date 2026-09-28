@@ -288,6 +288,12 @@ export default function SolveScreen() {
 
   const problem = run[index];
 
+  // The cover is still up, deliberately, so the child never glimpses the game
+  // between tapping Start and the first problem. Drop it now we have drawn.
+  useEffect(() => {
+    gate?.dismissCover();
+  }, []);
+
   useEffect(() => {
     return () => {
       if (advance.current) {

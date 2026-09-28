@@ -47,6 +47,17 @@ class SolveLockGateModule : Module() {
       true
     }
 
+    Function("setProblemsPerCheck") { count: Int ->
+      val context = appContext.reactContext ?: return@Function false
+      UsageCounter.setProblemsPerCheck(context, count)
+      true
+    }
+
+    Function("dismissCover") {
+      BlockOverlay.hide()
+      true
+    }
+
     Function("resetUsage") {
       val context = appContext.reactContext ?: return@Function false
       UsageCounter.reset(context)
