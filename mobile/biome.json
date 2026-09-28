@@ -13,7 +13,8 @@
       "!!**/android",
       "!!**/.expo",
       "!!**/dist",
-      "!!**/build"
+      "!!**/build",
+      "!!**/problems/geometry-bank.ts"
     ]
   },
   "formatter": {

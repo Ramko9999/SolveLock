@@ -1,7 +1,12 @@
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,7 +14,13 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Diagram } from "@/components/util/diagram";
 import { gate } from "@/enforcement/gate";
+import {
+  type BankChoice,
+  type BankProblem,
+  GEOMETRY_BANK,
+} from "@/problems/geometry-bank";
 import { useQuotaStore } from "@/store/quota";
 import { useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
@@ -17,32 +28,18 @@ import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
 import { StyleUtils } from "@/theme/style-utils";
 
-type Problem = {
-  question: string;
-  options: number[];
-  answer: number;
-};
+/** A choice long enough that the big tile face would wrap badly. */
+const LONG_CHOICE = 10;
 
-const PROBLEMS: Problem[] = [
-  {
-    question:
-      "A pack has 6 stickers. Maya buys 4 packs, then gives away 7. How many are left?",
-    options: [24, 17, 31, 16],
-    answer: 17,
-  },
-  {
-    question:
-      "A bus holds 32 kids. 3 buses are full and 5 more ride with parents. How many kids in all?",
-    options: [96, 101, 37, 105],
-    answer: 101,
-  },
-  {
-    question:
-      "Liam reads 15 pages a night for 6 nights. The book has 120 pages. How many are left?",
-    options: [30, 90, 105, 25],
-    answer: 30,
-  },
-];
+/** No repeats inside one check. Only a run longer than the bank wraps. */
+function drawRun(count: number): BankProblem[] {
+  const deck = [...GEOMETRY_BANK];
+  for (let slot = deck.length - 1; slot > 0; slot -= 1) {
+    const swap = Math.floor(Math.random() * (slot + 1));
+    [deck[slot], deck[swap]] = [deck[swap], deck[slot]];
+  }
+  return Array.from({ length: count }, (_, slot) => deck[slot % deck.length]);
+}
 
 const PRESS_SPRING = { damping: 20, stiffness: 340 };
 
@@ -93,24 +90,37 @@ type TileState = "idle" | "correct" | "wrong";
 const answerTileStyles = StyleSheet.create({
   container: {
     flex: 1,
-    aspectRatio: 1.55,
   },
   pressable: {
     ...StyleUtils.flexRowCenterAll(),
     flex: 1,
     borderRadius: Radius.xxl,
     borderBottomWidth: 3,
+    overflow: "hidden",
+  },
+  picture: {
+    ...StyleUtils.flexRowCenterAll(),
+    width: "82%",
   },
 });
 
 type AnswerTileProps = {
-  value: number;
+  choice: BankChoice;
   state: TileState;
   disabled: boolean;
+  /** Picture choices need room, so the whole grid squares up together. */
+  aspectRatio: number;
   onSelect: () => void;
 };
 
-function AnswerTile({ value, state, disabled, onSelect }: AnswerTileProps) {
+function AnswerTile({
+  choice,
+  state,
+  disabled,
+  aspectRatio,
+  onSelect,
+}: AnswerTileProps) {
+  const { width } = useWindowDimensions();
   const fill = useColor(AppColor.fill);
   const edge = useColor(AppColor.edge);
   const correct = useColor(AppColor.correct);
@@ -124,8 +134,12 @@ function AnswerTile({ value, state, disabled, onSelect }: AnswerTileProps) {
     transform: [{ scale: scale.value }],
   }));
 
+  const tileWidth = width * 0.42;
+
   return (
-    <Animated.View style={[answerTileStyles.container, containerStyle]}>
+    <Animated.View
+      style={[answerTileStyles.container, { aspectRatio }, containerStyle]}
+    >
       <Pressable
         disabled={disabled}
         onPress={onSelect}
@@ -143,9 +157,25 @@ function AnswerTile({ value, state, disabled, onSelect }: AnswerTileProps) {
           },
         ]}
       >
-        <Text huge extrabold onFilled={state !== "idle"}>
-          {value}
-        </Text>
+        {"svg" in choice ? (
+          <View style={answerTileStyles.picture}>
+            <Diagram
+              xml={choice.svg}
+              width={tileWidth * 0.82}
+              maxHeight={tileWidth * 0.78}
+            />
+          </View>
+        ) : (
+          <Text
+            huge={choice.text.length <= LONG_CHOICE}
+            neutral={choice.text.length > LONG_CHOICE}
+            extrabold
+            onFilled={state !== "idle"}
+            style={{ textAlign: "center", paddingHorizontal: "6%" }}
+          >
+            {choice.text}
+          </Text>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -163,36 +193,47 @@ const answerGridStyles = StyleSheet.create({
 });
 
 type AnswerGridProps = {
-  problem: Problem;
+  problem: BankProblem;
   selected: number | null;
-  onSelect: (value: number) => void;
+  onSelect: (choice: number) => void;
 };
 
 function AnswerGrid({ problem, selected, onSelect }: AnswerGridProps) {
   const { width } = useWindowDimensions();
   const gap = width * 0.031;
   const revealed = selected !== null;
+  const pictures = problem.choices.some((choice) => "svg" in choice);
 
-  const stateFor = (value: number): TileState => {
-    if (!revealed) return "idle";
-    if (value === problem.answer) return "correct";
-    if (value === selected) return "wrong";
+  const stateFor = (choice: number): TileState => {
+    if (!revealed) {
+      return "idle";
+    }
+    if (choice === problem.answer) {
+      return "correct";
+    }
+    if (choice === selected) {
+      return "wrong";
+    }
     return "idle";
   };
 
-  const rows = [problem.options.slice(0, 2), problem.options.slice(2, 4)];
+  const rows = [
+    [0, 1],
+    [2, 3],
+  ];
 
   return (
     <View style={[answerGridStyles.container, { gap }]}>
       {rows.map((row) => (
         <View key={row.join("-")} style={[answerGridStyles.row, { gap }]}>
-          {row.map((value) => (
+          {row.map((choice) => (
             <AnswerTile
-              key={value}
-              value={value}
-              state={stateFor(value)}
+              key={choice}
+              choice={problem.choices[choice]}
+              state={stateFor(choice)}
               disabled={revealed}
-              onSelect={() => onSelect(value)}
+              aspectRatio={pictures ? 1.05 : 1.55}
+              onSelect={() => onSelect(choice)}
             />
           ))}
         </View>
@@ -213,19 +254,26 @@ const solveStyles = StyleSheet.create({
     paddingBottom: "10%",
   },
   question: {
-    paddingTop: "14%",
+    ...StyleUtils.flexColumn(),
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingTop: "6%",
+    paddingBottom: "6%",
+    gap: 18,
   },
   questionText: {
-    lineHeight: 39,
+    lineHeight: 30,
   },
-  spacer: {
-    flex: 1,
+  diagram: {
+    ...StyleUtils.flexRowCenterAll(),
+    width: "100%",
   },
 });
 
 export default function SolveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const background = useColor(AppColor.background);
   const releaseQuota = useQuotaStore((s) => s.releaseQuota);
   const token = useSetupStore((s) => s.selection?.token ?? null);
@@ -233,15 +281,7 @@ export default function SolveScreen() {
   const setArmedAt = useSetupStore((s) => s.setArmedAt);
   const countCorrect = useSetupStore((s) => s.countCorrect);
   const problemsPerCheck = useSetupStore((s) => s.problemsPerCheck);
-  // The bank is smaller than the largest run the parent can ask for, so wrap.
-  const run = useMemo(
-    () =>
-      Array.from(
-        { length: problemsPerCheck },
-        (_, slot) => PROBLEMS[slot % PROBLEMS.length],
-      ),
-    [problemsPerCheck],
-  );
+  const run = useMemo(() => drawRun(problemsPerCheck), [problemsPerCheck]);
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -257,13 +297,13 @@ export default function SolveScreen() {
   }, []);
 
   const handleSelect = useCallback(
-    (value: number) => {
+    (choice: number) => {
       if (selected !== null) {
         return;
       }
-      setSelected(value);
+      setSelected(choice);
 
-      const isRight = value === problem.answer;
+      const isRight = choice === problem.answer;
       if (isRight) {
         countCorrect();
       }
@@ -322,12 +362,23 @@ export default function SolveScreen() {
     >
       <View style={solveStyles.content}>
         <ProgressBar ratio={(index + 1) / run.length} />
-        <View style={solveStyles.question}>
-          <Text huge bold style={solveStyles.questionText}>
-            {problem.question}
+        <ScrollView
+          contentContainerStyle={solveStyles.question}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text large bold style={solveStyles.questionText}>
+            {problem.stem}
           </Text>
-        </View>
-        <View style={solveStyles.spacer} />
+          {problem.diagram ? (
+            <View style={solveStyles.diagram}>
+              <Diagram
+                xml={problem.diagram}
+                width={width * 0.88}
+                maxHeight={height * 0.35}
+              />
+            </View>
+          ) : null}
+        </ScrollView>
         <AnswerGrid
           problem={problem}
           selected={selected}
