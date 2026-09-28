@@ -162,6 +162,13 @@ export default function HomeScreen() {
     return <View style={{ flex: 1, backgroundColor: background }} />;
   }
 
+  // Before anything else, and during render rather than in an effect: the
+  // service leaves this flag when the child taps Start on the cover, and an
+  // effect would paint a frame of home first.
+  if (gate?.getBlockedPackage()) {
+    return <Redirect href="/solve" />;
+  }
+
   if (status === "reached") {
     return <Redirect href="/blocked" />;
   }

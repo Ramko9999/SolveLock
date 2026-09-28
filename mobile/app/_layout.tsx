@@ -44,23 +44,17 @@ export default function RootLayout() {
     gate.setQuotaMinutes(quotaMinutes);
   }, [hydrated, gatedPackages, gatedCategories, quotaMinutes]);
 
-  // The overlay is the block screen on Android, and the child already tapped
-  // Start on it, so open the problems directly. A deep link cannot carry this:
-  // the development client swallows our URL scheme.
+  // Coming forward without remounting -- the app was already alive behind the
+  // cover. A cold start is handled in app/index.tsx instead, during render, so
+  // the home screen never paints first.
   useEffect(() => {
     const native = gate;
     if (!native) {
       return;
     }
-    const open = () => {
-      if (native.getBlockedPackage()) {
-        router.replace("/solve");
-      }
-    };
-    open();
     const state = AppState.addEventListener("change", (next) => {
-      if (next === "active") {
-        open();
+      if (next === "active" && native.getBlockedPackage()) {
+        router.replace("/solve");
       }
     });
     return () => state.remove();
