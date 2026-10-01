@@ -1,5 +1,6 @@
 import { NativeModule, requireOptionalNativeModule } from "expo";
 import type {
+  CoverEvent,
   ForegroundApp,
   InstalledApp,
   SolveLockGateModuleEvents,
@@ -11,7 +12,11 @@ declare class SolveLockGateModule extends NativeModule<SolveLockGateModuleEvents
   getInstalledApps(): Promise<InstalledApp[]>;
   getUsage(): Usage | null;
   setGatedPackages(packages: string[]): boolean;
+  setGatedCategories(categories: number[]): boolean;
   setQuotaMinutes(minutes: number): boolean;
+  setProblemsPerCheck(count: number): boolean;
+  drainCoverLog(): CoverEvent[];
+  dismissCover(): boolean;
   resetUsage(): boolean;
   getPermissionStatus(): Record<string, boolean>;
   openPermission(id: string): boolean;

@@ -35,9 +35,32 @@ class SolveLockGateModule : Module() {
       true
     }
 
+    Function("setGatedCategories") { values: List<Int> ->
+      val context = appContext.reactContext ?: return@Function false
+      UsageCounter.setGatedCategories(context, values)
+      true
+    }
+
     Function("setQuotaMinutes") { minutes: Double ->
       val context = appContext.reactContext ?: return@Function false
       UsageCounter.setQuotaMinutes(context, minutes)
+      true
+    }
+
+    Function("setProblemsPerCheck") { count: Int ->
+      val context = appContext.reactContext ?: return@Function false
+      UsageCounter.setProblemsPerCheck(context, count)
+      true
+    }
+
+    Function("drainCoverLog") {
+      val context = appContext.reactContext
+        ?: return@Function emptyList<Map<String, Any?>>()
+      CoverLog.drain(context)
+    }
+
+    Function("dismissCover") {
+      BlockOverlay.hide()
       true
     }
 

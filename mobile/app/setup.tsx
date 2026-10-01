@@ -104,6 +104,7 @@ export default function SetupScreen() {
   const fill = useColor(AppColor.fill);
   const selection = useSetupStore((s) => s.selection);
   const gatedPackages = useSetupStore((s) => s.gatedPackages);
+  const gatedCategories = useSetupStore((s) => s.gatedCategories);
   const [permissionsLeft, setPermissionsLeft] = useState<number | null>(null);
   const quotaMinutes = useSetupStore((s) => s.quotaMinutes);
   const setArmedAt = useSetupStore((s) => s.setArmedAt);
@@ -142,7 +143,7 @@ export default function SetupScreen() {
   const approved = isIOS ? authorization === "approved" : true;
   const picked = isIOS
     ? (selection?.categoryCount ?? 0) + (selection?.applicationCount ?? 0) > 0
-    : gatedPackages.length > 0;
+    : gatedPackages.length + gatedCategories.length > 0;
   const permissionsDone = permissionsLeft === null || permissionsLeft === 0;
   const ready = approved && picked && permissionsDone;
 
@@ -160,7 +161,8 @@ export default function SetupScreen() {
   const finish = () => {
     setArmedAt(Date.now());
     startQuota(quotaMinutes, selection?.token ?? null);
-    router.back();
+    // replace, not back: onboarding arrives here with nothing behind it.
+    router.replace("/");
   };
 
   const authorizationValue =
@@ -208,22 +210,31 @@ export default function SetupScreen() {
             onPress={approved ? undefined : authorize}
           />
         ) : null}
-        <SettingRow
-          label="Notifications"
-          value={notifications ? "Allowed" : "Tap to allow"}
-          onPress={notifications ? undefined : allowNotifications}
-        />
+        {/* iOS only: the shield cannot open us, so it posts a notification the
+            child taps. Nothing on the Android path posts anything. */}
+        {isIOS ? (
+          <SettingRow
+            label="Notifications"
+            value={notifications ? "Allowed" : "Tap to allow"}
+            onPress={notifications ? undefined : allowNotifications}
+          />
+        ) : null}
         <SettingRow
           label="Gated apps"
           value={
             isIOS
               ? describeSelection(selection)
-              : describeGatedPackages(gatedPackages)
+              : describeGatedPackages(gatedPackages, gatedCategories)
           }
           onPress={approved ? () => router.push("/picker") : undefined}
         />
         <SettingRow label="Check every" value={minutes(quotaMinutes)} />
         <SettingRow label="Problems per check" value="3" />
+        <SettingRow
+          label="Diagnostics"
+          value="Counters and test buttons"
+          onPress={() => router.push("/settings")}
+        />
 
         <View style={setupStyles.spacer} />
 

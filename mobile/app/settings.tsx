@@ -6,7 +6,7 @@ import type { Diagnostics } from "@/enforcement";
 import { enforcement } from "@/enforcement";
 import { type ForegroundApp, gate, type Usage } from "@/enforcement/gate";
 import { useQuotaStore } from "@/store/quota";
-import { QUOTA_CHOICES, useSetupStore } from "@/store/setup";
+import { TEST_QUOTA_CHOICES, useSetupStore } from "@/store/setup";
 import { Text, View } from "@/theme";
 import { AppColor, useColor } from "@/theme/color";
 import { Radius } from "@/theme/design-tokens";
@@ -263,7 +263,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={settingsStyles.content}>
         <Section title="Quota">
           <View style={settingsStyles.row}>
-            {QUOTA_CHOICES.map((minutes) => (
+            {TEST_QUOTA_CHOICES.map((minutes) => (
               <Choice
                 key={minutes}
                 label={`${minutes} min`}

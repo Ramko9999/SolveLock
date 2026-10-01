@@ -94,6 +94,16 @@ class SolveLockAccessibilityService : AccessibilityService() {
     // "the child left the game" makes us hide the cover we just added, and the
     // pair flickers many times a second. Our own windows never move the cover.
     if (packageName == getPackageName()) {
+      // Our Activity reaching the front is the only safe moment to drop the
+      // cover. Hiding it when the child taps Start shows them the game for a
+      // few frames while React Native starts. The overlay reports itself too,
+      // so tell the two apart by class.
+      // The window exists before it has drawn, so dropping the cover here
+      // shows the game for a frame. The problems screen calls dismissCover as
+      // soon as it mounts; this is only the fallback for when it does not.
+      if (event.className?.toString()?.endsWith("MainActivity") == true) {
+        handler.postDelayed({ BlockOverlay.hide() }, 1500L)
+      }
       return
     }
     if (over) {
@@ -106,8 +116,14 @@ class SolveLockAccessibilityService : AccessibilityService() {
   }
 
   private fun cover(packageName: String) {
-    BlockOverlay.show(this, UsageCounter.quotaMinutes(this)) {
-      BlockOverlay.hide()
+    if (!BlockOverlay.isShowing()) {
+      CoverLog.record(this, packageName, UsageCounter.quotaMillis(this))
+    }
+    BlockOverlay.show(
+      this,
+      UsageCounter.quotaMinutes(this),
+      UsageCounter.problemsPerCheck(this),
+    ) {
       Blocker.openProblems(this, packageName)
     }
   }

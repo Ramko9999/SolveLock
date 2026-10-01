@@ -9,6 +9,18 @@ export type InstalledApp = {
   label: string;
   /** A PNG data URI. Null when Android refuses to draw the icon. */
   icon: string | null;
+  /** ApplicationInfo.category. -1 when the app declares none. */
+  category: number;
+  /** Android's own localised name for the category, or null. */
+  categoryLabel: string | null;
+};
+
+/** One time the cover went up, recorded natively and drained later. */
+export type CoverEvent = {
+  packageName: string;
+  /** Wall-clock when the cover appeared, not when we reported it. */
+  at: number;
+  quotaMillis: number;
 };
 
 export type Usage = {
@@ -18,6 +30,7 @@ export type Usage = {
   /** True while a gated app is in front, so the clock is running. */
   inGatedApp: boolean;
   gatedPackages: string[];
+  gatedCategories: number[];
 };
 
 export type SolveLockGateModuleEvents = {

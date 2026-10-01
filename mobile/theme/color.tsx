@@ -16,6 +16,9 @@ export enum AppColor {
   correct = "correct",
   wrong = "wrong",
   edge = "edge",
+  diagramInk = "diagramInk",
+  diagramInk2 = "diagramInk2",
+  diagramGrid = "diagramGrid",
   onFilled = "onFilled",
 }
 
@@ -30,6 +33,9 @@ const LIGHT_COLORS: Record<AppColor, string> = {
   [AppColor.correct]: "#2E9E5B",
   [AppColor.wrong]: "#D9453D",
   [AppColor.edge]: "#DCDCDE",
+  [AppColor.diagramInk]: "#21242C",
+  [AppColor.diagramInk2]: "#5F6167",
+  [AppColor.diagramGrid]: "#E4E6EB",
   [AppColor.onFilled]: "#FFFFFF",
 };
 
@@ -44,6 +50,9 @@ const DARK_COLORS: Record<AppColor, string> = {
   [AppColor.correct]: "#4CC47C",
   [AppColor.wrong]: "#FF6B64",
   [AppColor.edge]: "#0A0A0A",
+  [AppColor.diagramInk]: "#E6E8EC",
+  [AppColor.diagramInk2]: "#A4A8B0",
+  [AppColor.diagramGrid]: "#2C3038",
   [AppColor.onFilled]: "#FFFFFF",
 };
 

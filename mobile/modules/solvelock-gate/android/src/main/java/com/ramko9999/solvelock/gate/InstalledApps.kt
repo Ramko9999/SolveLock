@@ -2,6 +2,7 @@ package com.ramko9999.solvelock.gate
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -15,6 +16,24 @@ import java.io.ByteArrayOutputStream
  */
 object InstalledApps {
   private const val ICON_PIXELS = 96
+
+  /**
+   * The category an app declares for itself. Nobody is required to declare
+   * one, so plenty report UNDEFINED. Cached because the accessibility service
+   * asks on every window change and this is an IPC.
+   */
+  private val categories = java.util.concurrent.ConcurrentHashMap<String, Int>()
+
+  fun categoryOf(context: Context, packageName: String): Int {
+    categories[packageName]?.let { return it }
+    val category = try {
+      context.packageManager.getApplicationInfo(packageName, 0).category
+    } catch (error: Exception) {
+      ApplicationInfo.CATEGORY_UNDEFINED
+    }
+    categories[packageName] = category
+    return category
+  }
 
   fun list(context: Context): List<Map<String, Any?>> {
     val packages = context.packageManager
@@ -30,7 +49,11 @@ object InstalledApps {
         mapOf(
           "packageName" to app.packageName,
           "label" to packages.getApplicationLabel(app).toString(),
-          "icon" to encode(packages.getApplicationIcon(app))
+          "icon" to encode(packages.getApplicationIcon(app)),
+          "category" to app.category,
+          "categoryLabel" to ApplicationInfo
+            .getCategoryTitle(context, app.category)
+            ?.toString()
         )
       }
       .sortedBy { (it["label"] as String).lowercase() }
