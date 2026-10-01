@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { AppState, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { AnalyticsApi, AnalyticsEvents } from "@/api/analytics";
 import { enforcement } from "@/enforcement";
 import { gate } from "@/enforcement/gate";
 import { useQuotaStore } from "@/store/quota";
@@ -51,6 +52,30 @@ export default function RootLayout() {
     quotaMinutes,
     problemsPerCheck,
   ]);
+
+  // The service writes a cover down the moment it raises one, because no
+  // JavaScript is alive then. We send whatever it has whenever we run, so a
+  // cover the child ignored is reported too, with the time it really happened.
+  useEffect(() => {
+    const drain = async () => {
+      await AnalyticsApi.initialize();
+      for (const cover of gate?.drainCoverLog() ?? []) {
+        AnalyticsApi.trackEvent(AnalyticsEvents.COVER_SHOWN, {
+          gated_package: cover.packageName,
+          quota_minutes: Math.round(cover.quotaMillis / 60_000),
+          shown_at: new Date(cover.at).toISOString(),
+          reported_after_ms: Date.now() - cover.at,
+        });
+      }
+    };
+    drain();
+    const state = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
+        drain();
+      }
+    });
+    return () => state.remove();
+  }, []);
 
   // Coming forward when nothing remounts -- the app was already alive behind
   // the cover. A cold start is handled in app/index.tsx during render instead,

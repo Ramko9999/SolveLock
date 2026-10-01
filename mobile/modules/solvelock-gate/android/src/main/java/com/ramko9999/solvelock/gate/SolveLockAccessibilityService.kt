@@ -116,6 +116,9 @@ class SolveLockAccessibilityService : AccessibilityService() {
   }
 
   private fun cover(packageName: String) {
+    if (!BlockOverlay.isShowing()) {
+      CoverLog.record(this, packageName, UsageCounter.quotaMillis(this))
+    }
     BlockOverlay.show(
       this,
       UsageCounter.quotaMinutes(this),

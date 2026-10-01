@@ -14,6 +14,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AnalyticsApi, AnalyticsEvents } from "@/api/analytics";
 import { Diagram } from "@/components/util/diagram";
 import { gate } from "@/enforcement/gate";
 import {
@@ -285,6 +286,11 @@ export default function SolveScreen() {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const advance = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Thinking time only: started when the problem appeared, not when the cover
+  // did, and it excludes the reveal hold before the next problem.
+  const shownAt = useRef(Date.now());
+  const startedAt = useRef(Date.now());
+  const correctSoFar = useRef(0);
 
   const problem = run[index];
 
@@ -292,7 +298,10 @@ export default function SolveScreen() {
   // between tapping Start and the first problem. Drop it now we have drawn.
   useEffect(() => {
     gate?.dismissCover();
-  }, []);
+    AnalyticsApi.trackEvent(AnalyticsEvents.CHECK_STARTED, {
+      problems: run.length,
+    });
+  }, [run.length]);
 
   useEffect(() => {
     return () => {
@@ -312,7 +321,18 @@ export default function SolveScreen() {
       const isRight = choice === problem.answer;
       if (isRight) {
         countCorrect();
+        correctSoFar.current += 1;
       }
+      AnalyticsApi.trackEvent(AnalyticsEvents.PROBLEM_ANSWERED, {
+        problem_id: problem.id,
+        lesson: problem.lesson,
+        has_diagram: problem.diagram !== undefined,
+        picture_choices: problem.choices.some((one) => "svg" in one),
+        position: index + 1,
+        of: run.length,
+        correct: isRight,
+        ms: Date.now() - shownAt.current,
+      });
       Haptics.impactAsync(
         isRight
           ? Haptics.ImpactFeedbackStyle.Light
@@ -322,6 +342,11 @@ export default function SolveScreen() {
       advance.current = setTimeout(
         () => {
           if (index + 1 >= run.length) {
+            AnalyticsApi.trackEvent(AnalyticsEvents.CHECK_COMPLETED, {
+              problems: run.length,
+              correct: correctSoFar.current,
+              ms: Date.now() - startedAt.current,
+            });
             // Android hands the child straight back to the game. iOS cannot,
             // so it drops them on our home screen and they find it themselves.
             if (gate) {
@@ -341,6 +366,7 @@ export default function SolveScreen() {
           }
           setIndex((current) => current + 1);
           setSelected(null);
+          shownAt.current = Date.now();
         },
         isRight ? REVEAL_MS.correct : REVEAL_MS.wrong,
       );
@@ -356,6 +382,7 @@ export default function SolveScreen() {
       setArmedAt,
       countCorrect,
       run,
+      problem,
     ],
   );
 

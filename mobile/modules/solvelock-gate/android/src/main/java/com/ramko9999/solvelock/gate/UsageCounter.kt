@@ -180,6 +180,12 @@ object UsageCounter {
   }
 
   @Synchronized
+  fun quotaMillis(context: Context): Long {
+    load(context)
+    return quotaMillis
+  }
+
+  @Synchronized
   fun quotaMinutes(context: Context): Int {
     load(context)
     return Math.max(1, Math.round(quotaMillis / 60_000.0).toInt())

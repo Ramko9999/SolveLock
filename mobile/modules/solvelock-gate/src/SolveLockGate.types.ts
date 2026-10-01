@@ -15,6 +15,14 @@ export type InstalledApp = {
   categoryLabel: string | null;
 };
 
+/** One time the cover went up, recorded natively and drained later. */
+export type CoverEvent = {
+  packageName: string;
+  /** Wall-clock when the cover appeared, not when we reported it. */
+  at: number;
+  quotaMillis: number;
+};
+
 export type Usage = {
   usedMillis: number;
   quotaMillis: number;

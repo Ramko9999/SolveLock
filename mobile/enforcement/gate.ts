@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import type {
+  CoverEvent,
   ForegroundApp,
   InstalledApp,
   Usage,
@@ -13,6 +14,7 @@ type Gate = {
   setGatedCategories(categories: number[]): boolean;
   setQuotaMinutes(minutes: number): boolean;
   setProblemsPerCheck(count: number): boolean;
+  drainCoverLog(): CoverEvent[];
   dismissCover(): boolean;
   resetUsage(): boolean;
   getPermissionStatus(): Record<string, boolean>;
@@ -36,4 +38,4 @@ export const gate: Gate | null =
         .default as Gate | null)
     : null;
 
-export type { ForegroundApp, InstalledApp, Usage };
+export type { CoverEvent, ForegroundApp, InstalledApp, Usage };

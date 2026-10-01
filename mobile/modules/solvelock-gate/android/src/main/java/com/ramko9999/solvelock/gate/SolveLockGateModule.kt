@@ -53,6 +53,12 @@ class SolveLockGateModule : Module() {
       true
     }
 
+    Function("drainCoverLog") {
+      val context = appContext.reactContext
+        ?: return@Function emptyList<Map<String, Any?>>()
+      CoverLog.drain(context)
+    }
+
     Function("dismissCover") {
       BlockOverlay.hide()
       true
